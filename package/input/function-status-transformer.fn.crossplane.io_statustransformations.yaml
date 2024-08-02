@@ -1,0 +1,158 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: statustransformations.function-status-transformer.fn.crossplane.io
+spec:
+  group: function-status-transformer.fn.crossplane.io
+  names:
+    categories:
+    - crossplane
+    kind: StatusTransformation
+    listKind: StatusTransformationList
+    plural: statustransformations
+    singular: statustransformation
+  scope: Namespaced
+  versions:
+  - name: v1beta1
+    schema:
+      openAPIV3Schema:
+        description: StatusTransformation can be used to provide input to this Function.
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          statusConditionHooks:
+            items:
+              description: |-
+                StatusConditionHook allows you to set conditions on the composite and claim
+                whenever the managed resource status conditions are in a certain state.
+              properties:
+                matchConditions:
+                  description: A list of conditions to match.
+                  items:
+                    description: ConditionMatcher will attempt to match a condition
+                      on the resource.
+                    properties:
+                      condition:
+                        description: Condition that must exist on the resource(s).
+                        properties:
+                          message:
+                            description: |-
+                              Message of the condition. Can be a regular expression. The regular
+                              expression can have capturing groups.
+                              For example: "Something went wrong: (?P<Error>.+)".
+                              The captured groups will be available to the message template when setting
+                              conditions.
+                            type: string
+                          reason:
+                            description: Reason of the condition. If omitted, will
+                              be treated as a wildcard.
+                            type: string
+                          status:
+                            description: Status of the condition. If omitted, will
+                              be treated as a wildcard.
+                            type: string
+                          type:
+                            description: Type of the condition. Required.
+                            type: string
+                        required:
+                        - message
+                        - reason
+                        - status
+                        - type
+                        type: object
+                      resourceName:
+                        description: |-
+                          The name of the resource to match against or a regex to match multiple
+                          resources. This is matching against the keys used in the observed and
+                          desired resource maps.
+                        type: string
+                      type:
+                        description: |-
+                          Will determine the behavior if matching multiple resources by using a
+                          regular expression as your ResourceName. Can be MatchAll or MatchAny.
+                          MatchAll requires all resources to match the condition. MatchAny requires
+                          any of the resources to match the condition.
+                        enum:
+                        - MatchAny
+                        - MatchAll
+                        type: string
+                    required:
+                    - condition
+                    - resourceName
+                    - type
+                    type: object
+                  type: array
+                setConditions:
+                  description: A list of conditions to set if all MatchConditions
+                    matched.
+                  items:
+                    description: ConditionSetter will set a condition on the target.
+                    properties:
+                      condition:
+                        description: Condition to set.
+                        properties:
+                          message:
+                            description: |-
+                              Message of the condition. Optional. A template can be used. The available
+                              template variables come from capturing groups in MatchCondition message
+                              regular expressions.
+                            type: string
+                          reason:
+                            description: Reason of the condition. Required.
+                            type: string
+                          status:
+                            description: Status of the condition. Required.
+                            type: string
+                          type:
+                            description: Type of the condition. Required.
+                            type: string
+                        required:
+                        - message
+                        - reason
+                        - status
+                        - type
+                        type: object
+                      force:
+                        description: |-
+                          If true, the condition will override a condition of the same Type. Defaults
+                          to false.
+                        type: boolean
+                      target:
+                        description: |-
+                          The target(s) to receive the condition. Can be Composite or
+                          CompositeAndClaim.
+                        type: string
+                    required:
+                    - condition
+                    - force
+                    - target
+                    type: object
+                  type: array
+              required:
+              - matchConditions
+              - setConditions
+              type: object
+            type: array
+        required:
+        - statusConditionHooks
+        type: object
+    served: true
+    storage: true

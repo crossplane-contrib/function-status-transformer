@@ -7,6 +7,7 @@ import (
 	"text/template"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/ptr"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
 	"github.com/crossplane/crossplane-runtime/pkg/errors"
@@ -20,15 +21,14 @@ import (
 
 const (
 	// Condition types.
-	typeStatusConditionsReady = "StatusConditionsReady"
+	typeFunctionSuccess = "StatusTransformationSuccess"
 
 	// Condition reasons.
-	reasonAvailable           = "Available"
-	reasonMatchFailure        = "MatchFailure"
-	reasonRegexFailure        = "RegexFailure"
-	reasonTemplateFailure     = "TemplateFailure"
-	reasonPathFailure         = "PathFailure"
-	reasonSetConditionFailure = "SetConditionFailure"
+	reasonAvailable                = "Available"
+	reasonInputFailure             = "InputFailure"
+	reasonObservedCompositeFailure = "ObservedCompositeFailure"
+	reasonMatchFailure             = "MatchFailure"
+	reasonSetConditionFailure      = "SetConditionFailure"
 )
 
 // Function returns whatever response you ask it to.
@@ -44,15 +44,17 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 
 	rsp := response.To(req, response.DefaultTTL)
 
-	in := &v1beta1.ManagedResourceHook{}
+	in := &v1beta1.StatusTransformation{}
 	if err := request.GetInput(req, in); err != nil {
-		response.Fatal(rsp, errors.Wrapf(err, "cannot get Function input from %T", req))
+		response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
+			WithMessage(errors.Wrapf(err, "cannot get Function input from %T", req).Error())
 		return rsp, nil
 	}
 
 	xr, err := request.GetObservedCompositeResource(req)
 	if err != nil {
-		response.Fatal(rsp, errors.Wrapf(err, "cannot get observed XR from %T", req))
+		response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
+			WithMessage(errors.Wrapf(err, "cannot get observed XR from %T", req).Error())
 		return rsp, nil
 	}
 
@@ -67,12 +69,11 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 		// The regular expression groups found in the matches.
 		scGroups := map[string]string{}
 		shMatched := true
-		// sh.Match(observed) => (matched, reGroups, error)
 		for mci, mc := range sh.MatchConditions {
 			mcMatched, mcGroups, err := matchConditions(mc, observed)
 			if err != nil {
 				f.log.Info("error when matching", "error", err, "statusConditionHookIndex", shi, "matchConditionIndex", mci, "compositeResource", xr.Resource.GetName())
-				response.ConditionFalse(rsp, typeStatusConditionsReady, reasonMatchFailure).
+				response.ConditionFalse(rsp, typeFunctionSuccess, reasonMatchFailure).
 					WithMessage(errors.Wrapf(err, "error when matching, statusConditionHookIndex: %d, matchConditionIndex: %d", shi, mci).Error())
 				mcMatched = false
 				errored = true
@@ -94,7 +95,7 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 
 		// All matchConditions matched, set the desired conditions.
 		for sci, cs := range sh.SetConditions {
-			if conditionsSet[cs.Type] && (cs.Force == nil || !*cs.Force) {
+			if conditionsSet[cs.Condition.Type] && (cs.Force == nil || !*cs.Force) {
 				// The condition is already set and this setter is not forceful.
 				continue
 			}
@@ -102,19 +103,19 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 			c, err := transformCondition(cs, scGroups)
 			if err != nil {
 				f.log.Info("failed to set condition", "error", err, "statusConditionHookIndex", shi, "setConditionIndex", sci, "compositeResource", xr.Resource.GetName())
-				response.ConditionFalse(rsp, typeStatusConditionsReady, reasonSetConditionFailure).
+				response.ConditionFalse(rsp, typeFunctionSuccess, reasonSetConditionFailure).
 					WithMessage(errors.Wrapf(err, "failed to set condition, statusConditionHookIndex: %d, setConditionIndex: %d", shi, sci).Error())
 				errored = true
 				continue
 			}
 
 			rsp.Conditions = append(rsp.Conditions, c)
-			conditionsSet[cs.Type] = true
+			conditionsSet[cs.Condition.Type] = true
 		}
 	}
 
 	if !errored {
-		response.ConditionTrue(rsp, typeStatusConditionsReady, reasonAvailable)
+		response.ConditionTrue(rsp, typeFunctionSuccess, reasonAvailable)
 	}
 
 	return rsp, nil
@@ -126,6 +127,8 @@ func matchConditions(cm v1beta1.ConditionMatcher, om map[string]*fnv1beta1.Resou
 		return false, nil, errors.Join(errors.New("failed to compile resourceName regex"), err)
 	}
 	cmGroups := map[string]string{}
+	matchedAny := false
+	matchedAll := true
 	for k, o := range om {
 		if !re.MatchString(k) {
 			continue
@@ -135,45 +138,58 @@ func matchConditions(cm v1beta1.ConditionMatcher, om map[string]*fnv1beta1.Resou
 		conditioned := xpv1.ConditionedStatus{}
 		// Ignoring error. If field is missing, we will default to unknown.
 		_ = fieldpath.Pave(o.GetResource().AsMap()).GetValueInto("status", &conditioned)
-		c := conditioned.GetCondition(xpv1.ConditionType(cm.Type))
-		if cm.Reason != nil && *cm.Reason != string(c.Reason) {
-			return false, nil, nil
+		c := conditioned.GetCondition(xpv1.ConditionType(cm.Condition.Type))
+		if cm.Condition.Reason != nil && *cm.Condition.Reason != string(c.Reason) {
+			matchedAll = false
+			continue
 		}
 
-		if cm.Status != nil && *cm.Status != v1.ConditionStatus(c.Status) {
-			return false, nil, nil
+		if cm.Condition.Status != nil && *cm.Condition.Status != v1.ConditionStatus(c.Status) {
+			matchedAll = false
+			continue
 		}
 
-		if cm.Message == nil {
+		if cm.Condition.Message == nil {
+			matchedAny = true
 			continue
 		}
 
 		// match message and build up map of args
-		re, err := regexp.Compile(*cm.Message)
+		re, err := regexp.Compile(*cm.Condition.Message)
 		if err != nil {
 			return false, nil, errors.Join(errors.New("failed to compile message regex"), err)
 		}
 
 		matches := re.FindStringSubmatch(c.Message)
 		if len(matches) == 0 {
-			return false, nil, nil
+			matchedAll = false
+			continue
 		}
+		matchedAny = true
 
 		for i := 1; i < len(matches); i++ {
 			cmGroups[re.SubexpNames()[i]] = matches[i]
 		}
 	}
 
-	return true, cmGroups, nil
+	var matched bool
+	switch ptr.Deref(cm.Type, v1beta1.MatchAll) {
+	case v1beta1.MatchAll:
+		matched = matchedAll
+	case v1beta1.MatchAny:
+		matched = matchedAny
+	}
+
+	return matched, cmGroups, nil
 }
 
 func transformCondition(cs v1beta1.ConditionSetter, templateValues map[string]string) (*fnv1beta1.Condition, error) {
 	c := &fnv1beta1.Condition{
-		Type:   cs.Type,
-		Reason: cs.Reason,
+		Type:   cs.Condition.Type,
+		Reason: cs.Condition.Reason,
 	}
 
-	switch cs.Status {
+	switch cs.Condition.Status {
 	case v1.ConditionTrue:
 		c.Status = fnv1beta1.Status_STATUS_CONDITION_TRUE
 	case v1.ConditionFalse:
@@ -194,14 +210,14 @@ func transformCondition(cs v1beta1.ConditionSetter, templateValues map[string]st
 	}
 
 	if len(templateValues) == 0 {
-		c.Message = cs.Message
+		c.Message = cs.Condition.Message
 		return c, nil
 	}
 
 	if len(templateValues) == 0 {
-		c.Message = cs.Message
-	} else if cs.Message != nil {
-		t, err := template.New("").Parse(*cs.Message)
+		c.Message = cs.Condition.Message
+	} else if cs.Condition.Message != nil {
+		t, err := template.New("").Parse(*cs.Condition.Message)
 		if err != nil {
 			return nil, errors.Join(errors.New("failed to parse template"), err)
 		}
