@@ -10,6 +10,7 @@
   - [MatchConditions are ANDed](#matchconditions-are-anded)
   - [Overriding Conditions](#overriding-conditions)
   - [Setting Default Conditions](#setting-default-conditions)
+  - [Creating Events](#creating-events)
 - [Determining the Status of the Function Itself](#determining-the-status-of-the-function-itself)
   - [Success](#success)
   - [Failure to Parse Input](#failure-to-parse-input)
@@ -28,7 +29,8 @@ to set one or more status conditions on the composite resource and the claim.
 Here is a basic usage example. The function will look for the
 `cloudsql-instance` resource within the observed resource map. If that resource
 matches the specified condition criteria, the condition in `setConditions` will
-get set on both the composite resource and the claim.
+get set on both the composite resource and the claim. Additionally, the event in
+`createEvents` will get created on the composite resource.
 ```yaml
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
@@ -59,12 +61,19 @@ spec:
               type: DatabaseReady
               status: "False"
               reason: FailedToCreate
+              message: "failed to create the database"
+          createEvents:
+          - target: CompositeAndClaim
+            event:
+              type: Warning
+              reason: FailedToCreate
+              message: "failed to create the database"
 ```
 
 ### Using Regular Expressions to Capture Message Data
 You can use regular expressions to capture data from the status condition
 message on the managed resource. The captured groups can then be inserted into
-the status condition message on the composite resource and claim.
+status condition and event messages on the composite resource and claim.
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -81,6 +90,12 @@ statusConditionHooks:
     condition:
       type: DatabaseReady
       status: "False"
+      reason: FailedToCreate
+      message: "Encountered an error creating the database: {{ .Error }}"
+  createEvents:
+  - target: CompositeAndClaim
+    event:
+      type: Warning
       reason: FailedToCreate
       message: "Encountered an error creating the database: {{ .Error }}"
 ```
@@ -217,6 +232,45 @@ apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
 statusConditionHooks:
 - matchConditions: []
+```
+
+### Creating Events
+In addition to setting conditions, you can also create events for both the
+composite resource and the claim. You should note that events should be created
+sparingly, and will be limited by the behavior documented in
+[5802](https://github.com/crossplane/crossplane/issues/5802)
+
+To create events, use `createEvents` as seen below.
+```yaml
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+spec:
+  compositeTypeRef:
+    apiVersion: your.api.group/v1alpha1
+    kind: XYourCompositeKind
+  mode: Pipeline
+  pipeline:
+  # Insert your pipeline steps here.
+  - step: status-handler
+    functionRef:
+      name: function-status-transformer
+    input:
+      apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
+      kind: StatusTransformation
+      statusConditionHooks:
+        - matchConditions:
+          - resourceName: "cloudsql-instance"
+            condition:
+              type: Synced
+              status: "False"
+              reason: ReconcileError
+              message: "failed to create the database: some internal error."
+          createEvents:
+          - target: CompositeAndClaim
+            event:
+              type: Warning
+              reason: FailedToCreate
+              message: "failed to create the database"
 ```
 
 ## Determining the Status of the Function Itself
