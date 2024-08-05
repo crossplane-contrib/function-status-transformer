@@ -1413,6 +1413,105 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 		},
+		"DefaultTargets": {
+			reason: "Target should be an optional field. Should default to Composite.",
+			args: args{
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchConditions": [
+        {
+          "resourceName": "example-mr",
+					"condition": {
+						"type": "Synced",
+						"status": "False",
+						"reason": "ReconcileError",
+						"message": "Something went wrong: (?P<Error>.+)"
+					}
+        }
+      ],
+      "setConditions": [
+        {
+					"condition": {
+						"type": "CustomReady",
+						"status": "False",
+						"reason": "InternalError",
+						"message": "{{ .Error }}"
+					}
+        }
+      ],
+      "createEvents": [
+        {
+					"event": {
+						"reason": "InternalError",
+						"message": "Some message."
+					}
+        }
+      ]
+    }
+  ]
+}
+`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"example-mr": {
+								Resource: resource.MustStructJSON(`
+{
+    "apiVersion": "some.example.com/v1alpha1",
+    "kind": "Object",
+    "metadata": {
+      "name": "example-name"
+    },
+    "status": {
+      "conditions": [
+        {
+					"message": "Something went wrong: some lower level error",
+          "reason": "ReconcileError",
+          "status": "False",
+          "type": "Synced"
+        }
+      ]
+    }
+  }`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1beta1.Result{
+						{
+							Severity: fnv1beta1.Severity_SEVERITY_NORMAL,
+							Message:  "Some message.",
+							Reason:   ptr.To("InternalError"),
+							Target:   fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:    "CustomReady",
+							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Reason:  "InternalError",
+							Message: ptr.To("some lower level error"),
+							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range cases {
