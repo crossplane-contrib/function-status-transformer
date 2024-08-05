@@ -29,8 +29,7 @@ to set one or more status conditions on the composite resource and the claim.
 Here is a basic usage example. The function will look for the
 `cloudsql-instance` resource within the observed resource map. If that resource
 matches the specified condition criteria, the condition in `setConditions` will
-get set on both the composite resource and the claim. Additionally, the event in
-`createEvents` will get created on the composite resource.
+get set on both the composite resource and the claim.
 ```yaml
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
@@ -60,12 +59,6 @@ spec:
             condition:
               type: DatabaseReady
               status: "False"
-              reason: FailedToCreate
-              message: "failed to create the database"
-          createEvents:
-          - target: CompositeAndClaim
-            event:
-              type: Warning
               reason: FailedToCreate
               message: "failed to create the database"
 ```
