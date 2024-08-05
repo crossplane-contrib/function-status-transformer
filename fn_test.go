@@ -40,7 +40,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-  "kind": "ManagedResourceHook",
+  "kind": "StatusTransformation",
   "statusConditionHooks": [
     {
       "matchConditions": [
@@ -60,6 +60,16 @@ func TestRunFunction(t *testing.T) {
 					"condition": {
 						"type": "CustomReady",
 						"status": "False",
+						"reason": "InternalError",
+						"message": "{{ .Error }}"
+					}
+        }
+      ],
+      "createEvents": [
+        {
+          "target": "Composite",
+					"event": {
+						"type": "Normal",
 						"reason": "InternalError",
 						"message": "{{ .Error }}"
 					}
@@ -97,8 +107,15 @@ func TestRunFunction(t *testing.T) {
 			},
 			want: want{
 				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
+					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1beta1.Result{
+						{
+							Severity: fnv1beta1.Severity_SEVERITY_NORMAL,
+							Message:  "some lower level error",
+							Reason:   ptr.To("InternalError"),
+							Target:   fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
 					Conditions: []*fnv1beta1.Condition{
 						{
 							Type:   "CustomReady",
@@ -126,7 +143,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -298,7 +315,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -425,7 +442,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -583,7 +600,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -645,7 +662,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [],
@@ -697,7 +714,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -776,7 +793,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -854,7 +871,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -933,7 +950,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -1059,7 +1076,7 @@ func TestRunFunction(t *testing.T) {
 					Input: resource.MustStructJSON(`
 		{
 		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "ManagedResourceHook",
+		  "kind": "StatusTransformation",
 		  "statusConditionHooks": [
 		    {
 		      "matchConditions": [
@@ -1230,6 +1247,167 @@ func TestRunFunction(t *testing.T) {
 							Reason:  "InputFailure",
 							Message: ptr.To("cannot get Function input from *v1beta1.RunFunctionRequest: cannot get function input *v1beta1.StatusTransformation from *v1beta1.RunFunctionRequest: cannot unmarshal JSON from *structpb.Struct into *v1beta1.StatusTransformation: json: cannot unmarshal Go value of type v1beta1.StatusTransformation: unknown name \"object\""),
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"InvalidEventType": {
+			reason: "The function should set a non-successful status if it encounters an event with an invalid type.",
+			args: args{
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchConditions": [
+        {
+          "resourceName": "example-mr",
+					"condition": {
+						"type": "Synced",
+						"status": "False",
+						"reason": "ReconcileError",
+						"message": "Something went wrong: (?P<Error>.+)"
+					}
+        }
+      ],
+      "createEvents": [
+        {
+          "target": "Composite",
+					"event": {
+						"type": "ThisIsAnInvalidType",
+						"reason": "InternalError",
+						"message": "{{ .Error }}"
+					}
+        }
+      ]
+    }
+  ]
+}
+`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"example-mr": {
+								Resource: resource.MustStructJSON(`
+{
+    "apiVersion": "some.example.com/v1alpha1",
+    "kind": "Object",
+    "metadata": {
+      "name": "example-name"
+    },
+    "status": {
+      "conditions": [
+        {
+					"message": "Something went wrong: some lower level error",
+          "reason": "ReconcileError",
+          "status": "False",
+          "type": "Synced"
+        }
+      ]
+    }
+  }`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1beta1.Result{},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:    "StatusTransformationSuccess",
+							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Reason:  "SetConditionFailure",
+							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Message: ptr.To("failed to set condition, statusConditionHookIndex: 0, createEventIndex: 0: invalid type ThisIsAnInvalidType, must be one of [Normal, Warning]"),
+						},
+					},
+				},
+			},
+		},
+		"DefaultEventType": {
+			reason: "If no event type is given, it should default to normal.",
+			args: args{
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchConditions": [
+        {
+          "resourceName": "example-mr",
+					"condition": {
+						"type": "Synced",
+						"status": "False",
+						"reason": "ReconcileError",
+						"message": "Something went wrong: (?P<Error>.+)"
+					}
+        }
+      ],
+      "createEvents": [
+        {
+          "target": "Composite",
+					"event": {
+						"reason": "InternalError",
+						"message": "Some message."
+					}
+        }
+      ]
+    }
+  ]
+}
+`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"example-mr": {
+								Resource: resource.MustStructJSON(`
+{
+    "apiVersion": "some.example.com/v1alpha1",
+    "kind": "Object",
+    "metadata": {
+      "name": "example-name"
+    },
+    "status": {
+      "conditions": [
+        {
+					"message": "Something went wrong: some lower level error",
+          "reason": "ReconcileError",
+          "status": "False",
+          "type": "Synced"
+        }
+      ]
+    }
+  }`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1beta1.Result{
+						{
+							Severity: fnv1beta1.Severity_SEVERITY_NORMAL,
+							Message:  "Some message.",
+							Reason:   ptr.To("InternalError"),
+							Target:   fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},

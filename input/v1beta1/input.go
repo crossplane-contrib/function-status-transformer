@@ -19,15 +19,15 @@ type StatusTransformation struct {
 	StatusConditionHooks []StatusConditionHook `json:"statusConditionHooks"`
 }
 
-// ConditionTarget determines which objects to set the condition on.
-type ConditionTarget string
+// Target determines which objects to set the condition on.
+type Target string
 
 const (
 	// TargetComposite targets only the composite resource.
-	TargetComposite ConditionTarget = "Composite"
+	TargetComposite Target = "Composite"
 
 	// TargetCompositeAndClaim targets both the composite and the claim.
-	TargetCompositeAndClaim ConditionTarget = "CompositeAndClaim"
+	TargetCompositeAndClaim Target = "CompositeAndClaim"
 )
 
 // +kubebuilder:validation:Enum=MatchAny;MatchAll
@@ -43,21 +43,21 @@ const (
 	MatchAny MatchType = "MatchAny"
 )
 
-// ConditionSetter will set a condition on the target.
-type ConditionSetter struct {
+// SetCondition will set a condition on the target.
+type SetCondition struct {
 	// The target(s) to receive the condition. Can be Composite or
 	// CompositeAndClaim.
-	Target ConditionTarget `json:"target"`
+	Target *Target `json:"target"`
 	// If true, the condition will override a condition of the same Type. Defaults
 	// to false.
 	Force *bool `json:"force"`
 	// Condition to set.
-	Condition SetCondition `json:"condition"`
+	Condition Condition `json:"condition"`
 }
 
-// SetCondition allows you to specify fields to set on a composite resource and
+// Condition allows you to specify fields to set on a composite resource and
 // claim.
-type SetCondition struct {
+type Condition struct {
 	// Type of the condition. Required.
 	Type string `json:"type"`
 	// Status of the condition. Required.
@@ -70,8 +70,8 @@ type SetCondition struct {
 	Message *string `json:"message"`
 }
 
-// ConditionMatcher will attempt to match a condition on the resource.
-type ConditionMatcher struct {
+// MatchCondition will attempt to match a condition on the resource.
+type MatchCondition struct {
 	// The name of the resource to match against or a regex to match multiple
 	// resources. This is matching against the keys used in the observed and
 	// desired resource maps.
@@ -84,11 +84,11 @@ type ConditionMatcher struct {
 	Type *MatchType `json:"type"`
 
 	// Condition that must exist on the resource(s).
-	Condition MatchCondition `json:"condition"`
+	Condition ConditionMatch `json:"condition"`
 }
 
-// MatchCondition allows you to specify fields that a condition must match.
-type MatchCondition struct {
+// ConditionMatch allows you to specify fields that a condition must match.
+type ConditionMatch struct {
 	// Type of the condition. Required.
 	Type string `json:"type"`
 	// Status of the condition. If omitted, will be treated as a wildcard.
@@ -107,8 +107,44 @@ type MatchCondition struct {
 // whenever the managed resource status conditions are in a certain state.
 type StatusConditionHook struct {
 	// A list of conditions to match.
-	MatchConditions []ConditionMatcher `json:"matchConditions"`
+	MatchConditions []MatchCondition `json:"matchConditions"`
 
 	// A list of conditions to set if all MatchConditions matched.
-	SetConditions []ConditionSetter `json:"setConditions"`
+	SetConditions []SetCondition `json:"setConditions"`
+
+	// A list of events to create if all MatchConditions matched.
+	CreateEvents []CreateEvent `json:"createEvents"`
+}
+
+// EventType type of an event.
+type EventType string
+
+const (
+	// EventTypeNormal signifies a normal event.
+	EventTypeNormal EventType = "Normal"
+
+	// EventTypeWarning signifies a warning event.
+	EventTypeWarning EventType = "Warning"
+)
+
+// Event allows you to specify the fields of an event to create.
+type Event struct {
+	// Type of the event. Optional. Should be either Normal or Warning.
+	Type *EventType `json:"type"`
+	// Reason of the event. Optional.
+	Reason *string `json:"reason"`
+	// Message of the event. Required. A template can be used. The available
+	// template variables come from capturing groups in MatchCondition message
+	// regular expressions.
+	Message string `json:"message"`
+}
+
+// CreateEvent will create an event for the target(s).
+type CreateEvent struct {
+	// The target(s) to create an event for. Can be Composite or
+	// CompositeAndClaim.
+	Target *Target `json:"target"`
+
+	// Event to create.
+	Event Event `json:"event"`
 }

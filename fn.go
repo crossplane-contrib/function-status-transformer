@@ -112,6 +112,19 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 			rsp.Conditions = append(rsp.Conditions, c)
 			conditionsSet[cs.Condition.Type] = true
 		}
+
+		for cei, ce := range sh.CreateEvents {
+			r, err := transformEvent(ce, scGroups)
+			if err != nil {
+				f.log.Info("failed to create event", "error", err, "statusConditionHookIndex", shi, "createEventIndex", cei, "compositeResource", xr.Resource.GetName())
+				response.ConditionFalse(rsp, typeFunctionSuccess, reasonSetConditionFailure).
+					WithMessage(errors.Wrapf(err, "failed to set condition, statusConditionHookIndex: %d, createEventIndex: %d", shi, cei).Error())
+				errored = true
+				continue
+			}
+
+			rsp.Results = append(rsp.Results, r)
+		}
 	}
 
 	if !errored {
@@ -121,7 +134,7 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 	return rsp, nil
 }
 
-func matchConditions(cm v1beta1.ConditionMatcher, om map[string]*fnv1beta1.Resource) (bool, map[string]string, error) {
+func matchConditions(cm v1beta1.MatchCondition, om map[string]*fnv1beta1.Resource) (bool, map[string]string, error) {
 	re, err := regexp.Compile(cm.ResourceName)
 	if err != nil {
 		return false, nil, errors.Join(errors.New("failed to compile resourceName regex"), err)
@@ -183,10 +196,11 @@ func matchConditions(cm v1beta1.ConditionMatcher, om map[string]*fnv1beta1.Resou
 	return matched, cmGroups, nil
 }
 
-func transformCondition(cs v1beta1.ConditionSetter, templateValues map[string]string) (*fnv1beta1.Condition, error) {
+func transformCondition(cs v1beta1.SetCondition, templateValues map[string]string) (*fnv1beta1.Condition, error) {
 	c := &fnv1beta1.Condition{
 		Type:   cs.Condition.Type,
 		Reason: cs.Condition.Reason,
+		Target: transformTarget(cs.Target),
 	}
 
 	switch cs.Condition.Status {
@@ -200,34 +214,58 @@ func transformCondition(cs v1beta1.ConditionSetter, templateValues map[string]st
 		c.Status = fnv1beta1.Status_STATUS_CONDITION_UNKNOWN
 	}
 
-	switch cs.Target {
-	case v1beta1.TargetCompositeAndClaim:
-		c.Target = fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum()
-	case v1beta1.TargetComposite:
-		fallthrough
-	default:
-		c.Target = fnv1beta1.Target_TARGET_COMPOSITE.Enum()
+	msg, err := templateMessage(cs.Condition.Message, templateValues)
+	if err != nil {
+		return &fnv1beta1.Condition{}, err
 	}
-
-	if len(templateValues) == 0 {
-		c.Message = cs.Condition.Message
-		return c, nil
-	}
-
-	if len(templateValues) == 0 {
-		c.Message = cs.Condition.Message
-	} else if cs.Condition.Message != nil {
-		t, err := template.New("").Parse(*cs.Condition.Message)
-		if err != nil {
-			return nil, errors.Join(errors.New("failed to parse template"), err)
-		}
-		b := bytes.NewBuffer(nil)
-		if err := t.Execute(b, templateValues); err != nil {
-			return nil, errors.Join(errors.New("failed to execute template"), err)
-		}
-		msg := b.String()
-		c.Message = &msg
-	}
+	c.Message = msg
 
 	return c, nil
+}
+
+func transformEvent(ec v1beta1.CreateEvent, templateValues map[string]string) (*fnv1beta1.Result, error) {
+	e := &fnv1beta1.Result{
+		Reason: ec.Event.Reason,
+		Target: transformTarget(ec.Target),
+	}
+
+	switch ptr.Deref(ec.Event.Type, v1beta1.EventTypeNormal) {
+	case v1beta1.EventTypeNormal:
+		e.Severity = fnv1beta1.Severity_SEVERITY_NORMAL
+	case v1beta1.EventTypeWarning:
+		e.Severity = fnv1beta1.Severity_SEVERITY_WARNING
+	default:
+		return &fnv1beta1.Result{}, errors.Errorf("invalid type %s, must be one of [Normal, Warning]", *ec.Event.Type)
+	}
+
+	msg, err := templateMessage(&ec.Event.Message, templateValues)
+	if err != nil {
+		return &fnv1beta1.Result{}, err
+	}
+	e.Message = ptr.Deref(msg, "")
+	return e, nil
+}
+
+func transformTarget(t *v1beta1.Target) *fnv1beta1.Target {
+	target := ptr.Deref(t, v1beta1.TargetComposite)
+	if target == v1beta1.TargetCompositeAndClaim {
+		return fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum()
+	}
+	return fnv1beta1.Target_TARGET_COMPOSITE.Enum()
+}
+
+func templateMessage(msg *string, values map[string]string) (*string, error) {
+	if msg == nil || len(values) == 0 {
+		return msg, nil
+	}
+
+	t, err := template.New("").Parse(*msg)
+	if err != nil {
+		return nil, errors.Join(errors.New("failed to parse template"), err)
+	}
+	b := bytes.NewBuffer(nil)
+	if err := t.Execute(b, values); err != nil {
+		return nil, errors.Join(errors.New("failed to execute template"), err)
+	}
+	return ptr.To(b.String()), nil
 }

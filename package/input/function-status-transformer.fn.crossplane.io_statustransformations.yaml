@@ -44,10 +44,46 @@ spec:
                 StatusConditionHook allows you to set conditions on the composite and claim
                 whenever the managed resource status conditions are in a certain state.
               properties:
+                createEvents:
+                  description: A list of events to create if all MatchConditions matched.
+                  items:
+                    description: CreateEvent will create an event for the target(s).
+                    properties:
+                      event:
+                        description: Event to create.
+                        properties:
+                          message:
+                            description: |-
+                              Message of the event. Required. A template can be used. The available
+                              template variables come from capturing groups in MatchCondition message
+                              regular expressions.
+                            type: string
+                          reason:
+                            description: Reason of the event. Optional.
+                            type: string
+                          type:
+                            description: Type of the event. Optional. Should be either
+                              Normal or Warning.
+                            type: string
+                        required:
+                        - message
+                        - reason
+                        - type
+                        type: object
+                      target:
+                        description: |-
+                          The target(s) to create an event for. Can be Composite or
+                          CompositeAndClaim.
+                        type: string
+                    required:
+                    - event
+                    - target
+                    type: object
+                  type: array
                 matchConditions:
                   description: A list of conditions to match.
                   items:
-                    description: ConditionMatcher will attempt to match a condition
+                    description: MatchCondition will attempt to match a condition
                       on the resource.
                     properties:
                       condition:
@@ -104,7 +140,7 @@ spec:
                   description: A list of conditions to set if all MatchConditions
                     matched.
                   items:
-                    description: ConditionSetter will set a condition on the target.
+                    description: SetCondition will set a condition on the target.
                     properties:
                       condition:
                         description: Condition to set.
@@ -147,6 +183,7 @@ spec:
                     type: object
                   type: array
               required:
+              - createEvents
               - matchConditions
               - setConditions
               type: object
