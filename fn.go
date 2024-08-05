@@ -40,7 +40,8 @@ type Function struct {
 
 // RunFunction runs the Function.
 func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequest) (*fnv1beta1.RunFunctionResponse, error) {
-	f.log.Info("Running function", "tag", req.GetMeta().GetTag())
+	f.log = f.log.WithValues("tag", req.GetMeta().GetTag())
+	f.log.Info("Running function")
 
 	rsp := response.To(req, response.DefaultTTL)
 
@@ -57,6 +58,11 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 			WithMessage(errors.Wrapf(err, "cannot get observed XR from %T", req).Error())
 		return rsp, nil
 	}
+	f.log = f.log.WithValues(
+		"xr-apiversion", xr.Resource.GetAPIVersion(),
+		"xr-kind", xr.Resource.GetKind(),
+		"xr-name", xr.Resource.GetName(),
+	)
 
 	observed := map[string]*fnv1beta1.Resource{}
 	if req.GetObserved() != nil && req.GetObserved().GetResources() != nil {
