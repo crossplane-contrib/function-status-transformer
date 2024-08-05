@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,8 +24,9 @@ func TestRunFunction(t *testing.T) {
 		req *fnv1beta1.RunFunctionRequest
 	}
 	type want struct {
-		rsp *fnv1beta1.RunFunctionResponse
-		err error
+		rsp        *fnv1beta1.RunFunctionResponse
+		cleanError bool
+		err        error
 	}
 
 	cases := map[string]struct {
@@ -1238,6 +1240,7 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
+				cleanError: true,
 				rsp: &fnv1beta1.RunFunctionResponse{
 					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
 					Conditions: []*fnv1beta1.Condition{
@@ -1518,6 +1521,22 @@ func TestRunFunction(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			f := &Function{log: logging.NewNopLogger()}
 			rsp, err := f.RunFunction(tc.args.ctx, tc.args.req)
+
+			// The function-sdk-go library depends on the go-json-experiment
+			// library. The go-json-experiment library explicitly randomizes
+			// their error messages between "cannot unmarshal..." and "unable
+			// to unmarshal...". This is to "Hyrum-proof" (see Hyrum's Law)
+			// their library. This means that we must un-Hyrum-proof the strings or
+			// else our unit tests will occasionally fail.
+			if tc.want.cleanError {
+				for i := range rsp.GetConditions() {
+					msg := rsp.GetConditions()[i].GetMessage()
+					if msg == "" {
+						continue
+					}
+					rsp.Conditions[i].Message = ptr.To(strings.ReplaceAll(msg, "unable to unmarshal Go value", "cannot unmarshal Go value"))
+				}
+			}
 
 			if diff := cmp.Diff(tc.want.rsp, rsp, protocmp.Transform()); diff != "" {
 				t.Errorf("%s\nf.RunFunction(...): -want rsp, +got rsp:\n%s", tc.reason, diff)
