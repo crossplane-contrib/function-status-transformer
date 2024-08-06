@@ -1327,7 +1327,7 @@ func TestRunFunction(t *testing.T) {
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "SetConditionFailure",
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-							Message: ptr.To("failed to set condition, statusConditionHookIndex: 0, createEventIndex: 0: invalid type ThisIsAnInvalidType, must be one of [Normal, Warning]"),
+							Message: ptr.To("failed to create event, statusConditionHookIndex: 0, createEventIndex: 0: invalid type ThisIsAnInvalidType, must be one of [Normal, Warning]"),
 						},
 					},
 				},

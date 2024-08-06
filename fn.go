@@ -40,29 +40,34 @@ type Function struct {
 
 // RunFunction runs the Function.
 func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequest) (*fnv1beta1.RunFunctionResponse, error) {
-	f.log = f.log.WithValues("tag", req.GetMeta().GetTag())
-	f.log.Info("Running function")
+	log := f.log.WithValues("tag", req.GetMeta().GetTag())
+	log.Debug("running function")
 
 	rsp := response.To(req, response.DefaultTTL)
 
 	in := &v1beta1.StatusTransformation{}
 	if err := request.GetInput(req, in); err != nil {
+		msg := errors.Wrapf(err, "cannot get Function input from %T", req).Error()
+		log.Info(msg)
 		response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
-			WithMessage(errors.Wrapf(err, "cannot get Function input from %T", req).Error())
+			WithMessage(msg)
 		return rsp, nil
 	}
 
 	xr, err := request.GetObservedCompositeResource(req)
 	if err != nil {
+		msg := errors.Wrapf(err, "cannot get observed XR from %T", req).Error()
+		log.Info(msg)
 		response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
-			WithMessage(errors.Wrapf(err, "cannot get observed XR from %T", req).Error())
+			WithMessage(msg)
 		return rsp, nil
 	}
-	f.log = f.log.WithValues(
+	log = log.WithValues(
 		"xr-apiversion", xr.Resource.GetAPIVersion(),
 		"xr-kind", xr.Resource.GetKind(),
 		"xr-name", xr.Resource.GetName(),
 	)
+	log.Info("running function")
 
 	observed := map[string]*fnv1beta1.Resource{}
 	if req.GetObserved() != nil && req.GetObserved().GetResources() != nil {
@@ -78,7 +83,7 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 		for mci, mc := range sh.MatchConditions {
 			mcMatched, mcGroups, err := matchConditions(mc, observed)
 			if err != nil {
-				f.log.Info("error when matching", "error", err, "statusConditionHookIndex", shi, "matchConditionIndex", mci, "compositeResource", xr.Resource.GetName())
+				log.Info("error when matching", "error", err, "statusConditionHookIndex", shi, "matchConditionIndex", mci)
 				response.ConditionFalse(rsp, typeFunctionSuccess, reasonMatchFailure).
 					WithMessage(errors.Wrapf(err, "error when matching, statusConditionHookIndex: %d, matchConditionIndex: %d", shi, mci).Error())
 				mcMatched = false
@@ -108,9 +113,10 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 
 			c, err := transformCondition(cs, scGroups)
 			if err != nil {
-				f.log.Info("failed to set condition", "error", err, "statusConditionHookIndex", shi, "setConditionIndex", sci, "compositeResource", xr.Resource.GetName())
+				msg := errors.Wrapf(err, "failed to set condition, statusConditionHookIndex: %d, setConditionIndex: %d", shi, sci).Error()
+				log.Info(msg)
 				response.ConditionFalse(rsp, typeFunctionSuccess, reasonSetConditionFailure).
-					WithMessage(errors.Wrapf(err, "failed to set condition, statusConditionHookIndex: %d, setConditionIndex: %d", shi, sci).Error())
+					WithMessage(msg)
 				errored = true
 				continue
 			}
@@ -122,9 +128,10 @@ func (f *Function) RunFunction(_ context.Context, req *fnv1beta1.RunFunctionRequ
 		for cei, ce := range sh.CreateEvents {
 			r, err := transformEvent(ce, scGroups)
 			if err != nil {
-				f.log.Info("failed to create event", "error", err, "statusConditionHookIndex", shi, "createEventIndex", cei, "compositeResource", xr.Resource.GetName())
+				msg := errors.Wrapf(err, "failed to create event, statusConditionHookIndex: %d, createEventIndex: %d", shi, cei).Error()
+				log.Info(msg)
 				response.ConditionFalse(rsp, typeFunctionSuccess, reasonSetConditionFailure).
-					WithMessage(errors.Wrapf(err, "failed to set condition, statusConditionHookIndex: %d, createEventIndex: %d", shi, cei).Error())
+					WithMessage(msg)
 				errored = true
 				continue
 			}
