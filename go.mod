@@ -2,7 +2,7 @@ module github.com/crossplane/function-status-transformer
 
 go 1.21
 
-toolchain go1.22.3
+toolchain go1.22.6
 
 require (
 	github.com/alecthomas/kong v0.9.0
