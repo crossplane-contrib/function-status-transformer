@@ -129,13 +129,13 @@ spec:
                           description: ResourceMatcher allows you to select one or
                             more resources.
                           properties:
-                            key:
+                            name:
                               description: |-
-                                Key used to index the observed resource map. Can also be a regular
+                                Name used to index the observed resource map. Can also be a regular
                                 expression that will be matched against the observed resource map keys.
                               type: string
                           required:
-                          - key
+                          - name
                           type: object
                         type: array
                       type:
