@@ -37,6 +37,7 @@ func TestRunFunction(t *testing.T) {
 		"CapturesRegexGroups": {
 			reason: "The function should be able to capture regex groups and use them when setting conditions.",
 			args: args{
+				ctx: context.Background(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
@@ -45,36 +46,42 @@ func TestRunFunction(t *testing.T) {
   "kind": "StatusTransformation",
   "statusConditionHooks": [
     {
-      "matchConditions": [
+      "matchers": [
         {
-          "resourceName": "example-mr",
-					"condition": {
-						"type": "Synced",
-						"status": "False",
-						"reason": "ReconcileError",
-						"message": "Something went wrong: (?P<Error>.+)"
-					}
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
         }
       ],
       "setConditions": [
         {
           "target": "Composite",
-					"condition": {
-						"type": "CustomReady",
-						"status": "False",
-						"reason": "InternalError",
-						"message": "{{ .Error }}"
-					}
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
         }
       ],
       "createEvents": [
         {
           "target": "Composite",
-					"event": {
-						"type": "Normal",
-						"reason": "InternalError",
-						"message": "{{ .Error }}"
-					}
+          "event": {
+            "type": "Normal",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
         }
       ]
     }
@@ -140,127 +147,152 @@ func TestRunFunction(t *testing.T) {
 		"WildcardMatching": {
 			reason: "When a matchCondition field is nil, it should act as a wildcard.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"reason": "ReconcileError",
-								"message": "Something went wrong."
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "NilStatus",
-								"status": "True",
-								"reason": "Test",
-								"message": "Testing wildcard matching."
-							}
-		        }
-		      ]
-		    },
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"message": "Something went wrong."
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "NilReason",
-								"status": "True",
-								"reason": "Test",
-								"message": "Testing wildcard matching."
-							}
-		        }
-		      ]
-		    },
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "NilMessage",
-								"status": "True",
-								"reason": "Test",
-								"message": "Testing wildcard matching."
-							}
-		        }
-		      ]
-		    },
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "NilAll",
-								"status": "True",
-								"reason": "Test",
-								"message": "Testing wildcard matching."
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "reason": "ReconcileError",
+              "message": "Something went wrong."
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "NilStatus",
+            "status": "True",
+            "reason": "Test",
+            "message": "Testing wildcard matching."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "message": "Something went wrong."
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "NilReason",
+            "status": "True",
+            "reason": "Test",
+            "message": "Testing wildcard matching."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "NilMessage",
+            "status": "True",
+            "reason": "Test",
+            "message": "Testing wildcard matching."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "NilAll",
+            "status": "True",
+            "reason": "Test",
+            "message": "Testing wildcard matching."
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-							"message": "Something went wrong.",
-		          "reason": "ReconcileError",
-		          "status": "False",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		  }`),
+				{
+				    "apiVersion": "some.example.com/v1alpha1",
+				    "kind": "Object",
+				    "metadata": {
+				      "name": "example-name"
+				    },
+				    "status": {
+				      "conditions": [
+				        {
+									"message": "Something went wrong.",
+				          "reason": "ReconcileError",
+				          "status": "False",
+				          "type": "Synced"
+				        }
+				      ]
+				    }
+				  }`),
 							},
 						},
 					},
@@ -312,103 +344,128 @@ func TestRunFunction(t *testing.T) {
 		"MatchConditionsAnded": {
 			reason: "Match conditions should be ANDed together.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        },
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Ready",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "MatchedBoth",
-								"status": "True",
-								"reason": "ShouldMatchBoth",
-								"message": "Match conditions are ANDed together. Both conditions should match."
-							}
-		        }
-		      ]
-		    },
-				{
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        },
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "DoesNotExist",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "MatchedOne",
-								"status": "True",
-								"reason": "OneDidNotMatch",
-								"message": "Should not match on the DoesNotExist condition."
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        },
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Ready",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "MatchedBoth",
+            "status": "True",
+            "reason": "ShouldMatchBoth",
+            "message": "Match conditions are ANDed together. Both conditions should match."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        },
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "DoesNotExist",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "MatchedOne",
+            "status": "True",
+            "reason": "OneDidNotMatch",
+            "message": "Should not match on the DoesNotExist condition."
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-		          "type": "Synced",
-		          "reason": "ReconcileError",
-		          "status": "False"
-		        },
-		        {
-		          "type": "Ready",
-		          "reason": "ReconcileError",
-		          "status": "False"
-		        }
-		      ]
-		    }
-		  }`),
+				{
+				    "apiVersion": "some.example.com/v1alpha1",
+				    "kind": "Object",
+				    "metadata": {
+				      "name": "example-name"
+				    },
+				    "status": {
+				      "conditions": [
+				        {
+				          "type": "Synced",
+				          "reason": "ReconcileError",
+				          "status": "False"
+				        },
+				        {
+				          "type": "Ready",
+				          "reason": "ReconcileError",
+				          "status": "False"
+				        }
+				      ]
+				    }
+				  }`),
 							},
 						},
 					},
@@ -439,117 +496,130 @@ func TestRunFunction(t *testing.T) {
 		"ConditionOverrideLogic": {
 			reason: "The same condition should not be overridden by default. Override should be possible by setting force.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "CompositeAndClaim",
-							"condition": {
-								"type": "ConditionA",
-								"status": "True",
-								"reason": "SetFirst"
-							}
-		        },
-		        {
-		          "target": "CompositeAndClaim",
-							"condition": {
-								"type": "ConditionA",
-								"status": "True",
-								"reason": "SetSecond",
-								"message": "Should not be set as force is not used."
-							}
-		        },
-						{
-		          "target": "CompositeAndClaim",
-							"condition": {
-								"type": "ConditionB",
-								"status": "True",
-								"reason": "SetFirst"
-							}
-		        },
-						{
-		          "target": "CompositeAndClaim",
-							"force": true,
-							"condition": {
-								"type": "ConditionB",
-								"status": "True",
-								"reason": "SetSecond"
-							}
-		        }
-		      ]
-		    },
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "CompositeAndClaim",
-							"condition": {
-								"type": "ConditionA",
-								"status": "True",
-								"reason": "SetSecondSeparateMatch",
-								"message": "Should not be set as force is not used."
-							}
-		        },
-						{
-		          "target": "CompositeAndClaim",
-							"force": true,
-							"condition": {
-								"type": "ConditionB",
-								"status": "True",
-								"reason": "SetThird"
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "ConditionA",
+            "status": "True",
+            "reason": "SetFirst"
+          }
+        },
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "ConditionA",
+            "status": "True",
+            "reason": "SetSecond",
+            "message": "Should not be set as force is not used."
+          }
+        },
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "ConditionB",
+            "status": "True",
+            "reason": "SetFirst"
+          }
+        },
+        {
+          "target": "CompositeAndClaim",
+          "force": true,
+          "condition": {
+            "type": "ConditionB",
+            "status": "True",
+            "reason": "SetSecond"
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "ConditionA",
+            "status": "True",
+            "reason": "SetSecondSeparateMatch",
+            "message": "Should not be set as force is not used."
+          }
+        },
+        {
+          "target": "CompositeAndClaim",
+          "force": true,
+          "condition": {
+            "type": "ConditionB",
+            "status": "True",
+            "reason": "SetThird"
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-							"message": "Something went wrong: some lower level error",
-		          "reason": "ReconcileError",
-		          "status": "False",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		  }`),
+				{
+				    "apiVersion": "some.example.com/v1alpha1",
+				    "kind": "Object",
+				    "metadata": {
+				      "name": "example-name"
+				    },
+				    "status": {
+				      "conditions": [
+				        {
+									"message": "Something went wrong: some lower level error",
+				          "reason": "ReconcileError",
+				          "status": "False",
+				          "type": "Synced"
+				        }
+				      ]
+				    }
+				  }`),
 							},
 						},
 					},
@@ -597,41 +667,62 @@ func TestRunFunction(t *testing.T) {
 		"HandlesMissingResources": {
 			reason: "You should be able to set conditions for missing resources by matching on the default Unknown status.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "Unknown",
-								"reason": "",
-								"message": ""
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "CompositeAndClaim",
-							"condition": {
-								"type": "CustomReady",
-								"status": "False",
-								"reason": "DoesNotExist"
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "Unknown",
+              "reason": "",
+              "message": ""
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "DoesNotExist"
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{},
+						Resources: map[string]*fnv1beta1.Resource{
+							"example-mr": {
+								Resource: resource.MustStructJSON(`
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": []
+		    }
+		  }`),
+							},
+						},
 					},
 				},
 			},
@@ -657,33 +748,253 @@ func TestRunFunction(t *testing.T) {
 			},
 		},
 		"NoMatchConditions": {
-			reason: "If no match conditions are given, it should match everything.",
+			reason: "If no match conditions are given, it should not match anything.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
+				{
+				  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+				  "kind": "StatusTransformation",
+				  "statusConditionHooks": [
+				    {
+				      "matchers": [],
+				      "setConditions": [
+				        {
+				          "target": "CompositeAndClaim",
+									"condition": {
+										"type": "CustomReady",
+										"status": "False",
+										"reason": "DoesNotExist"
+									}
+				        }
+				      ]
+				    }
+				  ]
+				}
+				`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"example-mr": {
+								Resource: resource.MustStructJSON(`
 		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [],
-		      "setConditions": [
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": [
 		        {
-		          "target": "CompositeAndClaim",
-							"condition": {
-								"type": "CustomReady",
-								"status": "False",
-								"reason": "DoesNotExist"
-							}
+							"message": "Something went wrong: some lower level error",
+		          "reason": "ReconcileError",
+		          "status": "False",
+		          "type": "Synced"
 		        }
 		      ]
 		    }
-		  ]
-		}
-		`),
+		  }`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1beta1.Result{},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"MatchConditionNoResource": {
+			reason: "If a match condition does not find a resource to match against, it should evaluate to false.",
+			args: args{
+				ctx: context.TODO(),
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "resource-key-a"
+            }
+          ],
+          "conditions": [
+            {
+              "message": "Something went wrong: some lower level error",
+              "reason": "ReconcileError",
+              "status": "False",
+              "type": "Synced"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "ResourceNotFound"
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{},
+						Resources: map[string]*fnv1beta1.Resource{
+							"resource-key-b": {
+								Resource: resource.MustStructJSON(`
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": [
+		        {
+							"message": "Something went wrong: some lower level error",
+		          "reason": "ReconcileError",
+		          "status": "False",
+		          "type": "Synced"
+		        }
+		      ]
+		    }
+		  }`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1beta1.Result{},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"SettingDefaultConditions": {
+			reason: "Users should be able to effectively set a default condition by providing a matchCondition of a custom type that matches the default values. They will still be required to match on the resourceKey.",
+			args: args{
+				ctx: context.TODO(),
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "resource-key-a"
+            }
+          ],
+          "conditions": [
+            {
+              "message": "",
+              "reason": "",
+              "status": "Unknown",
+              "type": "ThisTypeDoesNotExist"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "DefaultCondition"
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "resource-key-does-not-match"
+            }
+          ],
+          "conditions": [
+            {
+              "message": "",
+              "reason": "",
+              "status": "Unknown",
+              "type": "ThisTypeDoesNotExist"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "CompositeAndClaim",
+          "condition": {
+            "type": "CustomReadyShouldNotMatch",
+            "status": "False",
+            "reason": "DefaultCondition",
+            "message": "This condition should not be set as the resourceKey does not match a resource."
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"resource-key-a": {
+								Resource: resource.MustStructJSON(`
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": [
+		        {
+							"message": "Something went wrong: some lower level error",
+		          "reason": "ReconcileError",
+		          "status": "False",
+		          "type": "Synced"
+		        }
+		      ]
+		    }
+		  }`),
+							},
+						},
 					},
 				},
 			},
@@ -695,7 +1006,7 @@ func TestRunFunction(t *testing.T) {
 						{
 							Type:   "CustomReady",
 							Status: fnv1beta1.Status_STATUS_CONDITION_FALSE,
-							Reason: "DoesNotExist",
+							Reason: "DefaultCondition",
 							Target: fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
 						},
 						{
@@ -711,61 +1022,68 @@ func TestRunFunction(t *testing.T) {
 		"MatchRegexFailureMessage": {
 			reason: "The function should set the shared status condition to false when encountering a regex failure when matching the message.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError",
-								"message": "a bad regex (?!)"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "CustomReady",
-								"status": "False",
-								"reason": "InternalError",
-								"message": "{{ .Error }}"
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "a bad regex (?!)"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-							"message": "Something went wrong: some lower level error",
-		          "reason": "ReconcileError",
-		          "status": "False",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		  }`),
+				{
+				    "apiVersion": "some.example.com/v1alpha1",
+				    "kind": "Object",
+				    "metadata": {
+				      "name": "example-name"
+				    },
+				    "status": {
+				      "conditions": [
+				        {
+									"message": "Something went wrong: some lower level error",
+				          "reason": "ReconcileError",
+				          "status": "False",
+				          "type": "Synced"
+				        }
+				      ]
+				    }
+				  }`),
 							},
 						},
 					},
@@ -781,7 +1099,7 @@ func TestRunFunction(t *testing.T) {
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "MatchFailure",
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-							Message: ptr.To("error when matching, statusConditionHookIndex: 0, matchConditionIndex: 0: [failed to compile message regex, error parsing regexp: invalid or unsupported Perl syntax: `(?!`]"),
+							Message: ptr.To("cannot match resources, statusConditionHookIndex: 0, matchConditionIndex: 0: cannot compile message regex: error parsing regexp: invalid or unsupported Perl syntax: `(?!`"),
 						},
 					},
 				},
@@ -790,60 +1108,67 @@ func TestRunFunction(t *testing.T) {
 		"MatchRegexFailureResourceName": {
 			reason: "The function should set the shared status condition to false when encountering a regex failure when matching the resourceName.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-(?!)",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "CustomReady",
-								"status": "False",
-								"reason": "InternalError",
-								"message": "{{ .Error }}"
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-(?!)"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-							"message": "Something went wrong: some lower level error",
-		          "reason": "ReconcileError",
-		          "status": "False",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		  }`),
+				{
+				    "apiVersion": "some.example.com/v1alpha1",
+				    "kind": "Object",
+				    "metadata": {
+				      "name": "example-name"
+				    },
+				    "status": {
+				      "conditions": [
+				        {
+									"message": "Something went wrong: some lower level error",
+				          "reason": "ReconcileError",
+				          "status": "False",
+				          "type": "Synced"
+				        }
+				      ]
+				    }
+				  }`),
 							},
 						},
 					},
@@ -859,7 +1184,7 @@ func TestRunFunction(t *testing.T) {
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "MatchFailure",
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-							Message: ptr.To("error when matching, statusConditionHookIndex: 0, matchConditionIndex: 0: [failed to compile resourceName regex, error parsing regexp: invalid or unsupported Perl syntax: `(?!`]"),
+							Message: ptr.To("cannot match resources, statusConditionHookIndex: 0, matchConditionIndex: 0: cannot compile resource key regex, resourcesIndex: 0: error parsing regexp: invalid or unsupported Perl syntax: `(?!`"),
 						},
 					},
 				},
@@ -868,61 +1193,68 @@ func TestRunFunction(t *testing.T) {
 		"TemplateParseFailure": {
 			reason: "The function should set the shared status condition to false when encountering a template parsing error.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError",
-								"message": "Something went wrong: (?P<Error>.+)"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "CustomReady",
-								"status": "False",
-								"reason": "InternalError",
-								"message": "{{ .Error }"
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "{{ .Error }"
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-							"message": "Something went wrong: some lower level error",
-		          "reason": "ReconcileError",
-		          "status": "False",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		  }`),
+				{
+				    "apiVersion": "some.example.com/v1alpha1",
+				    "kind": "Object",
+				    "metadata": {
+				      "name": "example-name"
+				    },
+				    "status": {
+				      "conditions": [
+				        {
+									"message": "Something went wrong: some lower level error",
+				          "reason": "ReconcileError",
+				          "status": "False",
+				          "type": "Synced"
+				        }
+				      ]
+				    }
+				  }`),
 							},
 						},
 					},
@@ -938,7 +1270,7 @@ func TestRunFunction(t *testing.T) {
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "SetConditionFailure",
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-							Message: ptr.To("failed to set condition, statusConditionHookIndex: 0, setConditionIndex: 0: [failed to parse template, template: :1: unexpected \"}\" in operand]"),
+							Message: ptr.To("cannot set condition, statusConditionHookIndex: 0, setConditionIndex: 0: cannot parse template: template: :1: unexpected \"}\" in operand"),
 						},
 					},
 				},
@@ -947,94 +1279,107 @@ func TestRunFunction(t *testing.T) {
 		"ContinuesOnFailure": {
 			reason: "When encountering an error with a matchCondition, the parent statusConditionHook should be skipped but other statusConditionHooks should still execute. When encountering an error with a setCondition, only that individual setCondition should be skipped.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError",
-								"message": "a bad regex (?!)"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "CustomReady",
-								"status": "False",
-								"reason": "InternalError",
-								"message": "a matchcondition failed, this should not be set"
-							}
-		        }
-		      ]
-		    },
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "example-mr",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError",
-								"message": "Something went wrong: (?P<Error>.+)"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "ShouldNotBeSet",
-								"status": "False",
-								"reason": "InternalError",
-								"message": "this condition will fail {{ .Error }"
-							}
-		        },
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "CustomReady",
-								"status": "False",
-								"reason": "InternalError",
-								"message": "this condition should be set, error: {{ .Error }}"
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "a bad regex (?!)"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "a matchcondition failed, this should not be set"
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "this condition will fail {{ .Error }"
+          }
+        },
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "this condition should be set, error: {{ .Error }}"
+          }
+        }
+      ]
+    }
+  ]
+}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-							"message": "Something went wrong: some lower level error",
-		          "reason": "ReconcileError",
-		          "status": "False",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		  }`),
+				{
+				    "apiVersion": "some.example.com/v1alpha1",
+				    "kind": "Object",
+				    "metadata": {
+				      "name": "example-name"
+				    },
+				    "status": {
+				      "conditions": [
+				        {
+									"message": "Something went wrong: some lower level error",
+				          "reason": "ReconcileError",
+				          "status": "False",
+				          "type": "Synced"
+				        }
+				      ]
+				    }
+				  }`),
 							},
 						},
 					},
@@ -1050,14 +1395,14 @@ func TestRunFunction(t *testing.T) {
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "MatchFailure",
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-							Message: ptr.To("error when matching, statusConditionHookIndex: 0, matchConditionIndex: 0: [failed to compile message regex, error parsing regexp: invalid or unsupported Perl syntax: `(?!`]"),
+							Message: ptr.To("cannot match resources, statusConditionHookIndex: 0, matchConditionIndex: 0: cannot compile message regex: error parsing regexp: invalid or unsupported Perl syntax: `(?!`"),
 						},
 						{
 							Type:    "StatusTransformationSuccess",
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "SetConditionFailure",
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-							Message: ptr.To("failed to set condition, statusConditionHookIndex: 1, setConditionIndex: 0: [failed to parse template, template: :1: unexpected \"}\" in operand]"),
+							Message: ptr.To("cannot set condition, statusConditionHookIndex: 1, setConditionIndex: 0: cannot parse template: template: :1: unexpected \"}\" in operand"),
 						},
 						{
 							Type:    "CustomReady",
@@ -1070,170 +1415,17 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 		},
-		"ResourceNameRegex": {
-			reason: "The function should treat resource names as regular expressions so that a matchCondition can target multiple resources.",
-			args: args{
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
-					Input: resource.MustStructJSON(`
-		{
-		  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
-		  "kind": "StatusTransformation",
-		  "statusConditionHooks": [
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "database-\\w+",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError",
-								"message": "Something went wrong: (?P<Error>.+)"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "DefaultMatchType",
-								"status": "True",
-								"reason": "TestingDefaultMatchAll",
-								"message": "Should not exist because database-a will not match."
-							}
-		        }
-		      ]
-		    },
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "database-\\w+",
-							"type": "MatchAll",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError",
-								"message": "Something went wrong: (?P<Error>.+)"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "MatchedAll",
-								"status": "True",
-								"reason": "TestingMatchAll",
-								"message": "Should not exist because database-a will not match."
-							}
-		        }
-		      ]
-		    },
-		    {
-		      "matchConditions": [
-		        {
-		          "resourceName": "database-\\w+",
-							"type": "MatchAny",
-							"condition": {
-								"type": "Synced",
-								"status": "False",
-								"reason": "ReconcileError",
-								"message": "Something went wrong: (?P<Error>.+)"
-							}
-		        }
-		      ],
-		      "setConditions": [
-		        {
-		          "target": "Composite",
-							"condition": {
-								"type": "MatchedAny",
-								"status": "True",
-								"reason": "TestingMatchAny",
-								"message": "Matched error: {{ .Error }}"
-							}
-		        }
-		      ]
-		    }
-		  ]
-		}
-		`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
-							"database-a": {
-								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-		          "reason": "Available",
-		          "status": "True",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		}`),
-							},
-							"database-b": {
-								Resource: resource.MustStructJSON(`
-		{
-		    "apiVersion": "some.example.com/v1alpha1",
-		    "kind": "Object",
-		    "metadata": {
-		      "name": "example-name"
-		    },
-		    "status": {
-		      "conditions": [
-		        {
-							"message": "Something went wrong: some lower level error",
-		          "reason": "ReconcileError",
-		          "status": "False",
-		          "type": "Synced"
-		        }
-		      ]
-		    }
-		}`),
-							},
-						},
-					},
-				},
-			},
-			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
-						{
-							Type:    "MatchedAny",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
-							Reason:  "TestingMatchAny",
-							Message: ptr.To("Matched error: some lower level error"),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-						},
-						{
-							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
-							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-						},
-					},
-				},
-			},
-		},
 		"BadInput": {
 			reason: "The function should fail if the input cannot be parsed.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
-		{
-						"object": "not valid"
-		}
-		`),
+				{
+								"object": "not valid"
+				}
+				`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{},
 					},
@@ -1258,6 +1450,7 @@ func TestRunFunction(t *testing.T) {
 		"InvalidEventType": {
 			reason: "The function should set a non-successful status if it encounters an event with an invalid type.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
@@ -1266,52 +1459,58 @@ func TestRunFunction(t *testing.T) {
   "kind": "StatusTransformation",
   "statusConditionHooks": [
     {
-      "matchConditions": [
+      "matchers": [
         {
-          "resourceName": "example-mr",
-					"condition": {
-						"type": "Synced",
-						"status": "False",
-						"reason": "ReconcileError",
-						"message": "Something went wrong: (?P<Error>.+)"
-					}
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
         }
       ],
       "createEvents": [
         {
           "target": "Composite",
-					"event": {
-						"type": "ThisIsAnInvalidType",
-						"reason": "InternalError",
-						"message": "{{ .Error }}"
-					}
+          "event": {
+            "type": "ThisIsAnInvalidType",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
         }
       ]
     }
   ]
 }
-`),
+		`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-{
-    "apiVersion": "some.example.com/v1alpha1",
-    "kind": "Object",
-    "metadata": {
-      "name": "example-name"
-    },
-    "status": {
-      "conditions": [
-        {
-					"message": "Something went wrong: some lower level error",
-          "reason": "ReconcileError",
-          "status": "False",
-          "type": "Synced"
-        }
-      ]
-    }
-  }`),
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": [
+		        {
+							"message": "Something went wrong: some lower level error",
+		          "reason": "ReconcileError",
+		          "status": "False",
+		          "type": "Synced"
+		        }
+		      ]
+		    }
+		  }`),
 							},
 						},
 					},
@@ -1327,7 +1526,7 @@ func TestRunFunction(t *testing.T) {
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "SetConditionFailure",
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
-							Message: ptr.To("failed to create event, statusConditionHookIndex: 0, createEventIndex: 0: invalid type ThisIsAnInvalidType, must be one of [Normal, Warning]"),
+							Message: ptr.To("cannot create event, statusConditionHookIndex: 0, createEventIndex: 0: invalid type ThisIsAnInvalidType, must be one of [Normal, Warning]"),
 						},
 					},
 				},
@@ -1336,6 +1535,7 @@ func TestRunFunction(t *testing.T) {
 		"DefaultEventType": {
 			reason: "If no event type is given, it should default to normal.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
@@ -1344,51 +1544,57 @@ func TestRunFunction(t *testing.T) {
   "kind": "StatusTransformation",
   "statusConditionHooks": [
     {
-      "matchConditions": [
+      "matchers": [
         {
-          "resourceName": "example-mr",
-					"condition": {
-						"type": "Synced",
-						"status": "False",
-						"reason": "ReconcileError",
-						"message": "Something went wrong: (?P<Error>.+)"
-					}
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
         }
       ],
       "createEvents": [
         {
           "target": "Composite",
-					"event": {
-						"reason": "InternalError",
-						"message": "Some message."
-					}
+          "event": {
+            "reason": "InternalError",
+            "message": "Some message."
+          }
         }
       ]
     }
   ]
 }
-`),
+		`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-{
-    "apiVersion": "some.example.com/v1alpha1",
-    "kind": "Object",
-    "metadata": {
-      "name": "example-name"
-    },
-    "status": {
-      "conditions": [
-        {
-					"message": "Something went wrong: some lower level error",
-          "reason": "ReconcileError",
-          "status": "False",
-          "type": "Synced"
-        }
-      ]
-    }
-  }`),
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": [
+		        {
+							"message": "Something went wrong: some lower level error",
+		          "reason": "ReconcileError",
+		          "status": "False",
+		          "type": "Synced"
+		        }
+		      ]
+		    }
+		  }`),
 							},
 						},
 					},
@@ -1419,6 +1625,7 @@ func TestRunFunction(t *testing.T) {
 		"DefaultTargets": {
 			reason: "Target should be an optional field. Should default to Composite.",
 			args: args{
+				ctx: context.TODO(),
 				req: &fnv1beta1.RunFunctionRequest{
 					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
@@ -1427,60 +1634,66 @@ func TestRunFunction(t *testing.T) {
   "kind": "StatusTransformation",
   "statusConditionHooks": [
     {
-      "matchConditions": [
+      "matchers": [
         {
-          "resourceName": "example-mr",
-					"condition": {
-						"type": "Synced",
-						"status": "False",
-						"reason": "ReconcileError",
-						"message": "Something went wrong: (?P<Error>.+)"
-					}
+          "resources": [
+            {
+              "key": "example-mr"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
         }
       ],
       "setConditions": [
         {
-					"condition": {
-						"type": "CustomReady",
-						"status": "False",
-						"reason": "InternalError",
-						"message": "{{ .Error }}"
-					}
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
         }
       ],
       "createEvents": [
         {
-					"event": {
-						"reason": "InternalError",
-						"message": "Some message."
-					}
+          "event": {
+            "reason": "InternalError",
+            "message": "Some message."
+          }
         }
       ]
     }
   ]
 }
-`),
+		`),
 					Observed: &fnv1beta1.State{
 						Resources: map[string]*fnv1beta1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
-{
-    "apiVersion": "some.example.com/v1alpha1",
-    "kind": "Object",
-    "metadata": {
-      "name": "example-name"
-    },
-    "status": {
-      "conditions": [
-        {
-					"message": "Something went wrong: some lower level error",
-          "reason": "ReconcileError",
-          "status": "False",
-          "type": "Synced"
-        }
-      ]
-    }
-  }`),
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": [
+		        {
+							"message": "Something went wrong: some lower level error",
+		          "reason": "ReconcileError",
+		          "status": "False",
+		          "type": "Synced"
+		        }
+		      ]
+		    }
+		  }`),
 							},
 						},
 					},
@@ -1503,6 +1716,925 @@ func TestRunFunction(t *testing.T) {
 							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "InternalError",
 							Message: ptr.To("some lower level error"),
+							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"AnyResourceMatchesAnyCondition": {
+			reason: "AnyResourceMatchesAnyCondition should behave as expected.",
+			args: args{
+				ctx: context.TODO(),
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAnyCondition",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "True",
+              "reason": "ReconcileError"
+            },
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should be set because the second condition matches resource-b."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAnyCondition",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "True",
+              "reason": "DoesNotMatch"
+            },
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "DoesNotMatch"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "This condition should to be set because there should be no match."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAnyCondition",
+          "resources": [],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any resources."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAnyCondition",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": []
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any conditions."
+          }
+        }
+      ]
+    }
+  ]
+}
+						`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							// Resource A will not match to ensure it is treated as ANY and
+							// not ALL.
+							"resource-a": {
+								Resource: resource.MustStructJSON(`
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": []
+		    }
+		  }`),
+							},
+							"resource-b": {
+								Resource: resource.MustStructJSON(`
+		{
+		    "apiVersion": "some.example.com/v1alpha1",
+		    "kind": "Object",
+		    "metadata": {
+		      "name": "example-name"
+		    },
+		    "status": {
+		      "conditions": [
+		        {
+		          "reason": "ReconcileError",
+		          "status": "False",
+		          "type": "Synced"
+		        }
+		      ]
+		    }
+		  }`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:    "ShouldBeSet",
+							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason:  "Testing",
+							Message: ptr.To("This condition should be set because the second condition matches resource-b."),
+							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"AnyResourceMatchesAllConditions": {
+			reason: "AnyResourceMatchesAllConditions should behave as expected.",
+			args: args{
+				ctx: context.TODO(),
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAllConditions",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "True"
+            },
+            {
+              "type": "Ready",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should be set. All conditions are matched by resource-a."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAllConditions",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "True"
+            },
+            {
+              "type": "Ready",
+              "status": "False",
+              "message": "This condition does not match."
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because only one condition matches."
+          }
+        }
+      ]
+    },
+		{
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAllConditions",
+          "resources": [],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any resources."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AnyResourceMatchesAllConditions",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": []
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any conditions."
+          }
+        }
+      ]
+    }
+  ]
+}
+		`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"resource-a": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-a"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "True",
+        "reason": "ReconcileSuccess"
+      },
+      {
+        "type": "Ready",
+        "status": "True",
+        "reason": "Available"
+      }
+    ]
+  }
+}
+`),
+							},
+							"resource-b": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-b"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "False",
+        "reason": "ReconcileError"
+      }
+    ]
+  }
+}
+`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:    "ShouldBeSet",
+							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason:  "Testing",
+							Message: ptr.To("This condition should be set. All conditions are matched by resource-a."),
+							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"AllResourcesMatchAnyCondition": {
+			reason: "AllResourcesMatchAnyCondition should behave as expected.",
+			args: args{
+				ctx: context.TODO(),
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAnyCondition",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False"
+            },
+            {
+              "type": "Ready",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should be set. All resources are matched by the second condition."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAnyCondition",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            },
+            {
+              "key": "resource-c"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False"
+            },
+            {
+              "type": "Ready",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because resource-c does not match."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAnyCondition",
+          "resources": [],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any resources."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAnyCondition",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": []
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any conditions."
+          }
+        }
+      ]
+    }
+  ]
+}
+		`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"resource-a": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-a"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "True",
+        "reason": "ReconcileSuccess"
+      },
+      {
+        "type": "Ready",
+        "status": "True",
+        "reason": "Available"
+      }
+    ]
+  }
+}
+`),
+							},
+							"resource-b": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-b"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "True",
+        "reason": "ReconcileSuccess"
+      },
+      {
+        "type": "Ready",
+        "status": "True",
+        "reason": "Available"
+      }
+    ]
+  }
+}
+`),
+							},
+							"resource-c": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-c"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "True",
+        "reason": "ReconcileSuccess"
+      },
+      {
+        "type": "Ready",
+        "status": "False",
+        "reason": "Creating"
+      }
+    ]
+  }
+}
+`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:    "ShouldBeSet",
+							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason:  "Testing",
+							Message: ptr.To("This condition should be set. All resources are matched by the second condition."),
+							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"AllResourcesMatchAllConditions": {
+			reason: "AllResourcesMatchAllConditions should behave as expected.",
+			args: args{
+				ctx: context.TODO(),
+				req: &fnv1beta1.RunFunctionRequest{
+					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAllConditions",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "True"
+            },
+            {
+              "type": "Ready",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should be set. All resources match all conditions."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAllConditions",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "True"
+            },
+            {
+              "type": "Ready",
+              "status": "False"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set. The second condition does not match all resources."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAllConditions",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            },
+            {
+              "key": "resource-c"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "True"
+            },
+            {
+              "type": "Ready",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set. resource-c does not match the conditions."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAllConditions",
+          "resources": [],
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any resources."
+          }
+        }
+      ]
+    },
+    {
+      "matchers": [
+        {
+          "type": "AllResourcesMatchAllConditions",
+          "resources": [
+            {
+              "key": "resource-a"
+            },
+            {
+              "key": "resource-b"
+            }
+          ],
+          "conditions": []
+        }
+      ],
+      "setConditions": [
+        {
+          "condition": {
+            "type": "ShouldNotBeSet",
+            "status": "True",
+            "reason": "Testing",
+            "message": "This condition should not be set because it does not match against any conditions."
+          }
+        }
+      ]
+    }
+  ]
+}
+		`),
+					Observed: &fnv1beta1.State{
+						Resources: map[string]*fnv1beta1.Resource{
+							"resource-a": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-a"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "True",
+        "reason": "ReconcileSuccess"
+      },
+      {
+        "type": "Ready",
+        "status": "True",
+        "reason": "Available"
+      }
+    ]
+  }
+}
+`),
+							},
+							"resource-b": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-b"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "True",
+        "reason": "ReconcileSuccess"
+      },
+      {
+        "type": "Ready",
+        "status": "True",
+        "reason": "Available"
+      }
+    ]
+  }
+}
+`),
+							},
+							"resource-c": {
+								Resource: resource.MustStructJSON(`
+{
+  "apiVersion": "some.example.com/v1alpha1",
+  "kind": "Object",
+  "metadata": {
+    "name": "resource-name-c"
+  },
+  "status": {
+    "conditions": [
+      {
+        "type": "Synced",
+        "status": "True",
+        "reason": "ReconcileSuccess"
+      },
+      {
+        "type": "Ready",
+        "status": "False",
+        "reason": "Creating"
+      }
+    ]
+  }
+}
+`),
+							},
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1beta1.RunFunctionResponse{
+					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1beta1.Condition{
+						{
+							Type:    "ShouldBeSet",
+							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Reason:  "Testing",
+							Message: ptr.To("This condition should be set. All resources match all conditions."),
 							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{

@@ -80,59 +80,79 @@ spec:
                     - target
                     type: object
                   type: array
-                matchConditions:
+                matchers:
                   description: A list of conditions to match.
                   items:
-                    description: MatchCondition will attempt to match a condition
-                      on the resource.
+                    description: Matcher will attempt to match a condition on the
+                      resource.
                     properties:
-                      condition:
-                        description: Condition that must exist on the resource(s).
-                        properties:
-                          message:
-                            description: |-
-                              Message of the condition. Can be a regular expression. The regular
-                              expression can have capturing groups.
-                              For example: "Something went wrong: (?P<Error>.+)".
-                              The captured groups will be available to the message template when setting
-                              conditions.
-                            type: string
-                          reason:
-                            description: Reason of the condition. If omitted, will
-                              be treated as a wildcard.
-                            type: string
-                          status:
-                            description: Status of the condition. If omitted, will
-                              be treated as a wildcard.
-                            type: string
-                          type:
-                            description: Type of the condition. Required.
-                            type: string
-                        required:
-                        - message
-                        - reason
-                        - status
-                        - type
-                        type: object
-                      resourceName:
-                        description: |-
-                          The name of the resource to match against or a regex to match multiple
-                          resources. This is matching against the keys used in the observed and
-                          desired resource maps.
+                      conditions:
+                        description: Conditions that must exist on the resource(s).
+                        items:
+                          description: ConditionMatcher allows you to specify fields
+                            that a condition must match.
+                          properties:
+                            message:
+                              description: |-
+                                Message of the condition. Can be a regular expression. The regular
+                                expression can have capturing groups.
+                                For example: "Something went wrong: (?P<Error>.+)".
+                                The captured groups will be available to the message template when setting
+                                conditions.
+                              type: string
+                            reason:
+                              description: Reason of the condition. If omitted, will
+                                be treated as a wildcard.
+                              type: string
+                            status:
+                              description: Status of the condition. If omitted, will
+                                be treated as a wildcard.
+                              type: string
+                            type:
+                              description: Type of the condition. Required.
+                              type: string
+                          required:
+                          - message
+                          - reason
+                          - status
+                          - type
+                          type: object
+                        type: array
+                      name:
+                        description: Name of the matcher. Optional. Will be used in
+                          logging.
                         type: string
+                      resources:
+                        description: Resources that should have their conditions matched
+                          against.
+                        items:
+                          description: ResourceMatcher allows you to select one or
+                            more resources.
+                          properties:
+                            key:
+                              description: |-
+                                Key used to index the observed resource map. Can also be a regular
+                                expression that will be matched against the observed resource map keys.
+                              type: string
+                          required:
+                          - key
+                          type: object
+                        type: array
                       type:
                         description: |-
-                          Will determine the behavior if matching multiple resources by using a
-                          regular expression as your ResourceName. Can be MatchAll or MatchAny.
-                          MatchAll requires all resources to match the condition. MatchAny requires
-                          any of the resources to match the condition.
+                          Type will determine the behavior of the match. Can be one of the following.
+                          AnyResourceMatchesAnyCondition - Any resource must match any condition.
+                          AnyResourceMatchesAllConditions - Any resource must match all conditions.
+                          AllResourcesMatchAnyCondition - All resources must match any condition.
+                          AllResourcesMatchAllConditions - All resources must match all condition.
                         enum:
                         - MatchAny
                         - MatchAll
                         type: string
                     required:
-                    - condition
-                    - resourceName
+                    - conditions
+                    - name
+                    - resources
                     - type
                     type: object
                   type: array
@@ -184,7 +204,7 @@ spec:
                   type: array
               required:
               - createEvents
-              - matchConditions
+              - matchers
               - setConditions
               type: object
             type: array

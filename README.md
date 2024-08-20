@@ -1,5 +1,5 @@
 # function-status-transformer
-[![CI](https://github.com/dalton-hill-0/function-status-transformer/actions/workflows/ci.yml/badge.svg)](https://github.com/dalton-hill-0/function-status-transformer/actions/workflows/ci.yml)
+[![CI](https://github.com/crossplane-contrib/function-status-transformer/actions/workflows/ci.yml/badge.svg)](https://github.com/dalton-hill-0/function-status-transformer/actions/workflows/ci.yml)
 
 - [Requirements](#requirements)
 - [Usage](#usage)
@@ -9,8 +9,10 @@
   - [Condition Matching Wildcards](#condition-matching-wildcards)
   - [MatchConditions are ANDed](#matchconditions-are-anded)
   - [Overriding Conditions](#overriding-conditions)
+  - [Matching Missing Conditions](#matching-missing-conditions)
   - [Setting Default Conditions](#setting-default-conditions)
   - [Creating Events](#creating-events)
+  - [Customizing Matching Behavior](#customizing-matching-behavior)
 - [Determining the Status of the Function Itself](#determining-the-status-of-the-function-itself)
   - [Success](#success)
   - [Failure to Parse Input](#failure-to-parse-input)
@@ -47,20 +49,21 @@ spec:
       apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
       kind: StatusTransformation
       statusConditionHooks:
-        - matchConditions:
-          - resourceName: "cloudsql-instance"
-            condition:
-              type: Synced
-              status: "False"
-              reason: ReconcileError
-              message: "failed to create the database: some internal error."
-          setConditions:
-          - target: CompositeAndClaim
-            condition:
-              type: DatabaseReady
-              status: "False"
-              reason: FailedToCreate
-              message: "failed to create the database"
+      - matchers:
+        - resources: 
+          - key: "cloudsql-instance"
+          conditions:
+          - type: Synced
+            status: "False"
+            reason: ReconcileError
+            message: "failed to create the database: some internal error."
+        setConditions:
+        - target: CompositeAndClaim
+          condition:
+            type: DatabaseReady
+            status: "False"
+            reason: FailedToCreate
+            message: "failed to create the database"
 ```
 
 ### Using Regular Expressions to Capture Message Data
@@ -71,10 +74,11 @@ status condition and event messages on the composite resource and claim.
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
 statusConditionHooks:
-- matchConditions:
-  - resourceName: "cloudsql-instance"
-    condition:
-      type: Synced
+- matchers:
+  - resources:
+    - key: "cloudsql-instance"
+    conditions:
+    - type: Synced
       status: "False"
       reason: ReconcileError
       message: "failed to create the database: (?P<Error>.+)"
@@ -94,38 +98,20 @@ statusConditionHooks:
 ```
 
 ### Using Regular Expressions to Match Multiple Resources
-You can use regular expressions in the `resourceName`. This will allow you to
+You can use regular expressions in the `resourceKey`. This will allow you to
 match multiple resources of a similar type. For instance, say you spin up
 multiple instances of the same type and name them like `cloudsql-1`,
 `cloudsql-2`, etc. You could write a single hook to handle all of these by using
-a resource name of `cloudsql-\\d+`.
+a resource key of `cloudsql-\\d+`.
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
 statusConditionHooks:
-- matchConditions:
-  - resourceName: "cloudsql-\\d+"
-    condition:
-      type: Synced
-      status: "False"
-      reason: ReconcileError
-```
-
-When matching multiple resources with the same match condition, you can choose
-whether to match all resources or at least one. This can be done by specifying
-`matchCondition.Type`. The default behavior is to match all resources.
-```yaml
-apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
-kind: StatusTransformation
-statusConditionHooks:
-- matchConditions:
-  - resourceName: "cloudsql-\\d+"
-    # MatchAny: Only one resource matching the resourceName regex must match.
-    # MatchAll: All of the resources matchin the resourceName regex must match.
-    # Defaults to MatchAll.
-    type: "MatchAny"
-    condition:
-      type: Synced
+- matchers:
+  - resources:
+    - key: "cloudsql-\\d+"
+    conditions:
+    - type: Synced
       status: "False"
       reason: ReconcileError
 ```
@@ -138,32 +124,36 @@ value that cannot be left empty is the `type`.
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
 statusConditionHooks:
-- matchConditions:
-  - resourceName: "cloudsql-\\d+"
-    condition:
-      # This will treat "reason" and "message" as wildcards.
-      type: Synced
+- matchers:
+  - resources:
+    - key: "cloudsql-\\d+"
+    conditions:
+      # The "reason" and "message" fields will be treated as wildcards.
+    - type: Synced
       status: "False"
 ```
 
-### MatchConditions are ANDed
-When using multiple `matchConditions`, they must all match before
-`setConditions` will be triggered.
+### Matchers are ANDed
+When using multiple `matchers`, they must all match before `setConditions` will
+be triggered.
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
 statusConditionHooks:
-# Both matchConditions must be true before the corresponding setConditions will
+# Both matchers must be true before the corresponding setConditions will
 # be set
-- matchConditions:
-  - resourceName: "cloudsql"
-    condition:
-      type: Synced
+- matchers:
+  - resources:
+    - key: "cloudsql"
+    conditions:
+    - type: Synced
       status: "True"
-  - resourceName: "cloudsql"
-    condition:
-      type: Ready
+  - resources:
+    - "cloudsql"
+    conditions:
+    - type: Ready
       status: "True"
+  setConditions: {...}
 ```
 
 ### Overriding Conditions
@@ -203,28 +193,52 @@ statusConditionHooks:
       message: "Encountered an error creating the database: {{ .Error }}"
 ```
 
-### Setting Default Conditions
-You can set default conditions even when the observed resource has no status
-conditions. To do this, match unknown conditions.
+### Matching Missing Conditions
+You can match against missing conditions. To do this, use the default unknown
+condition values.
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
 statusConditionHooks:
-- matchConditions:
-  - resourceName: "cloudsql"
-    condition:
-      type: Synced
+- matchers:
+  - resources:
+    - key: "cloudsql"
+    conditions:
+      # These are the values seen when a condition does not exist.
+    - type: Synced
       status: "Unknown"
+      reason: ""
+      message: ""
 ```
 
-You can also leave `matchConditions` empty, which will match everything. This
-could be useful if you want to add a default hook at the end that will only set
-conditions if they have not yet been set.
+### Setting Default Conditions
+If you want to set one or more conditions when no other hook has matched, you
+can do this by placing a hook at the end and make sure the `setCondition`
+`force` values are omitted or set to false. For matching, you can either use all
+wildcard fields (see [Condition Matching
+Wildcards](#condition-matching-wildcards)) or you can specify a type that will
+never exist. The only requirement is that the `resourceKey` must match one or
+more resources.
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
 statusConditionHooks:
-- matchConditions: []
+- matchers:
+  - resourceKey: "cloudsql"
+    condition:
+      # This is a type that does not exist on the resource.
+      type: ThisTypeDoesNotExist
+      # These are the values seen when a condition does not exist.
+      status: "Unknown"
+      reason: ""
+      message: ""
+- setConditions:
+  - target: CompositeAndClaim
+    force: false
+    condition:
+      type: DatabaseReady
+      status: "Unknown"
+      reason: Unknown
 ```
 
 ### Creating Events
@@ -251,20 +265,44 @@ spec:
       apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
       kind: StatusTransformation
       statusConditionHooks:
-        - matchConditions:
-          - resourceName: "cloudsql-instance"
-            condition:
-              type: Synced
-              status: "False"
-              reason: ReconcileError
-              message: "failed to create the database: some internal error."
-          createEvents:
-          - target: CompositeAndClaim
-            event:
-              type: Warning
-              reason: FailedToCreate
-              message: "failed to create the database"
+      - matchers:
+        - resources:
+          - key: "cloudsql-instance"
+          conditions:
+          - type: Synced
+            status: "False"
+            reason: ReconcileError
+            message: "failed to create the database: some internal error."
+        createEvents:
+        - target: CompositeAndClaim
+          event:
+            type: Warning
+            reason: FailedToCreate
+            message: "failed to create the database"
 ```
+
+### Customizing Matching Behavior
+Any given matcher will first find all resources selected by `matcher.resources`.
+It will then compare the status conditions of the resources against the status
+conditions found in `matcher.conditions`. You can customize the comparison
+behavior by setting `matcher.type`. The different match types and their
+behaviors can be seen below.
+- `AnyResourceMatchesAnyCondition` - Considered a match if any resource matches
+  any condition. An example use case would be if you want to transform any error
+  condition from one of your managed resources into an error condition on your
+  composite and claim.
+- `AnyResourceMatchesAllConditions` - Considered a match if any resources
+  matches all conditions. An example use case would be if you want to check if
+  any resource is synced but not ready. You could then communicate to the user
+  that everything is valid and they just need to wait for resources to become
+  ready.
+- `AllResourcesMatchAnyCondition` - Considered a match if all resources match
+  any condition. An example use case would be if you want to check that some
+  resources match one of the many possible good states.
+- `AllResourcesMatchAllConditions` (default) - Considered a match if all
+  resources match all conditions. An example use case would be checking that all
+  resources are both synced and ready. You could then let the user know that
+  everything is ready to go.
 
 ## Determining the Status of the Function Itself
 The status of this function can be found by viewing the
@@ -307,7 +345,7 @@ set to `False` with a reason of `InputFailure`. Note that no `matchCondition` or
 
 ### Failure to Match a Regular Expression
 If an invalid regular expression is provided in a `matchCondition` `message` or
-`resourceName`, the `StatusTransformationSuccess` condition will be set to
+`resourceKey`, the `StatusTransformationSuccess` condition will be set to
 `False` with a reason of `MatchFailure`. Note that no further `matchCondition`
 will be evaluated for corresponding `statusConditionHook` and the overall result
 of matching for the hook will be a failure. All other `statusConditionHooks`

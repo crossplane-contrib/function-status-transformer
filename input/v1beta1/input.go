@@ -36,11 +36,17 @@ const (
 type MatchType string
 
 const (
-	// MatchAll resources.
-	MatchAll MatchType = "MatchAll"
+	// AnyResourceMatchesAnyCondition - Any resource must match any condition.
+	AnyResourceMatchesAnyCondition MatchType = "AnyResourceMatchesAnyCondition"
 
-	// MatchAny resource.
-	MatchAny MatchType = "MatchAny"
+	// AnyResourceMatchesAllConditions - Any resource must match all conditions.
+	AnyResourceMatchesAllConditions MatchType = "AnyResourceMatchesAllConditions"
+
+	// AllResourcesMatchAnyCondition - All resources must match any condition.
+	AllResourcesMatchAnyCondition MatchType = "AllResourcesMatchAnyCondition"
+
+	// AllResourcesMatchAllConditions - All resources must match all condition.
+	AllResourcesMatchAllConditions MatchType = "AllResourcesMatchAllConditions"
 )
 
 // SetCondition will set a condition on the target.
@@ -70,25 +76,34 @@ type Condition struct {
 	Message *string `json:"message"`
 }
 
-// MatchCondition will attempt to match a condition on the resource.
-type MatchCondition struct {
-	// The name of the resource to match against or a regex to match multiple
-	// resources. This is matching against the keys used in the observed and
-	// desired resource maps.
-	ResourceName string `json:"resourceName"`
+// Matcher will attempt to match a condition on the resource.
+type Matcher struct {
+	// Name of the matcher. Optional. Will be used in logging.
+	Name *string `json:"name"`
 
-	// Will determine the behavior if matching multiple resources by using a
-	// regular expression as your ResourceName. Can be MatchAll or MatchAny.
-	// MatchAll requires all resources to match the condition. MatchAny requires
-	// any of the resources to match the condition.
+	// Type will determine the behavior of the match. Can be one of the following.
+	// AnyResourceMatchesAnyCondition - Any resource must match any condition.
+	// AnyResourceMatchesAllConditions - Any resource must match all conditions.
+	// AllResourcesMatchAnyCondition - All resources must match any condition.
+	// AllResourcesMatchAllConditions - All resources must match all condition.
 	Type *MatchType `json:"type"`
 
-	// Condition that must exist on the resource(s).
-	Condition ConditionMatch `json:"condition"`
+	// Resources that should have their conditions matched against.
+	Resources []ResourceMatcher `json:"resources"`
+
+	// Conditions that must exist on the resource(s).
+	Conditions []ConditionMatcher `json:"conditions"`
 }
 
-// ConditionMatch allows you to specify fields that a condition must match.
-type ConditionMatch struct {
+// ResourceMatcher allows you to select one or more resources.
+type ResourceMatcher struct {
+	// Key used to index the observed resource map. Can also be a regular
+	// expression that will be matched against the observed resource map keys.
+	Key string `json:"key"`
+}
+
+// ConditionMatcher allows you to specify fields that a condition must match.
+type ConditionMatcher struct {
 	// Type of the condition. Required.
 	Type string `json:"type"`
 	// Status of the condition. If omitted, will be treated as a wildcard.
@@ -107,7 +122,7 @@ type ConditionMatch struct {
 // whenever the managed resource status conditions are in a certain state.
 type StatusConditionHook struct {
 	// A list of conditions to match.
-	MatchConditions []MatchCondition `json:"matchConditions"`
+	Matchers []Matcher `json:"matchers"`
 
 	// A list of conditions to set if all MatchConditions matched.
 	SetConditions []SetCondition `json:"setConditions"`
