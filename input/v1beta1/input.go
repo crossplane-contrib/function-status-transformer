@@ -97,9 +97,9 @@ type Matcher struct {
 
 // ResourceMatcher allows you to select one or more resources.
 type ResourceMatcher struct {
-	// Key used to index the observed resource map. Can also be a regular
+	// Name used to index the observed resource map. Can also be a regular
 	// expression that will be matched against the observed resource map keys.
-	Key string `json:"key"`
+	Name string `json:"name"`
 }
 
 // ConditionMatcher allows you to specify fields that a condition must match.

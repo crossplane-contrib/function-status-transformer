@@ -168,7 +168,7 @@ func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[str
 
 	rs := map[string]*fnv1beta1.Resource{}
 	for i, r := range mc.Resources {
-		re, err := regexp.Compile(r.Key)
+		re, err := regexp.Compile(r.Name)
 		if err != nil {
 			log.Info("cannot compile resource key regex", "resourcesIndex", i, "error", err)
 			return false, nil, errors.Wrapf(err, "cannot compile resource key regex, resourcesIndex: %d", i)

@@ -50,7 +50,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -160,7 +160,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -189,7 +189,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -218,7 +218,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -247,7 +247,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -357,7 +357,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -371,7 +371,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -400,7 +400,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -414,7 +414,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -509,7 +509,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -563,7 +563,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -680,7 +680,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -831,7 +831,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "resource-key-a"
+              "name": "resource-key-a"
             }
           ],
           "conditions": [
@@ -915,7 +915,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "resource-key-a"
+              "name": "resource-key-a"
             }
           ],
           "conditions": [
@@ -944,7 +944,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "resource-key-does-not-match"
+              "name": "resource-key-does-not-match"
             }
           ],
           "conditions": [
@@ -1035,7 +1035,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -1121,7 +1121,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-(?!)"
+              "name": "example-(?!)"
             }
           ],
           "conditions": [
@@ -1206,7 +1206,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -1292,7 +1292,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -1322,7 +1322,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -1463,7 +1463,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -1548,7 +1548,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -1638,7 +1638,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "key": "example-mr"
+              "name": "example-mr"
             }
           ],
           "conditions": [
@@ -1745,10 +1745,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AnyResourceMatchesAnyCondition",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": [
@@ -1782,10 +1782,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AnyResourceMatchesAnyCondition",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": [
@@ -1843,10 +1843,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AnyResourceMatchesAnyCondition",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": []
@@ -1944,10 +1944,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AnyResourceMatchesAllConditions",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": [
@@ -1979,10 +1979,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AnyResourceMatchesAllConditions",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": [
@@ -2039,10 +2039,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AnyResourceMatchesAllConditions",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": []
@@ -2151,10 +2151,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AllResourcesMatchAnyCondition",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": [
@@ -2186,13 +2186,13 @@ func TestRunFunction(t *testing.T) {
           "type": "AllResourcesMatchAnyCondition",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             },
             {
-              "key": "resource-c"
+              "name": "resource-c"
             }
           ],
           "conditions": [
@@ -2248,10 +2248,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AllResourcesMatchAnyCondition",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": []
@@ -2390,10 +2390,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AllResourcesMatchAllConditions",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": [
@@ -2425,10 +2425,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AllResourcesMatchAllConditions",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": [
@@ -2460,13 +2460,13 @@ func TestRunFunction(t *testing.T) {
           "type": "AllResourcesMatchAllConditions",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             },
             {
-              "key": "resource-c"
+              "name": "resource-c"
             }
           ],
           "conditions": [
@@ -2522,10 +2522,10 @@ func TestRunFunction(t *testing.T) {
           "type": "AllResourcesMatchAllConditions",
           "resources": [
             {
-              "key": "resource-a"
+              "name": "resource-a"
             },
             {
-              "key": "resource-b"
+              "name": "resource-b"
             }
           ],
           "conditions": []
