@@ -51,7 +51,7 @@ spec:
       statusConditionHooks:
       - matchers:
         - resources: 
-          - key: "cloudsql-instance"
+          - name: "cloudsql-instance"
           conditions:
           - type: Synced
             status: "False"
@@ -76,7 +76,7 @@ kind: StatusTransformation
 statusConditionHooks:
 - matchers:
   - resources:
-    - key: "cloudsql-instance"
+    - name: "cloudsql-instance"
     conditions:
     - type: Synced
       status: "False"
@@ -109,7 +109,7 @@ kind: StatusTransformation
 statusConditionHooks:
 - matchers:
   - resources:
-    - key: "cloudsql-\\d+"
+    - name: "cloudsql-\\d+"
     conditions:
     - type: Synced
       status: "False"
@@ -126,7 +126,7 @@ kind: StatusTransformation
 statusConditionHooks:
 - matchers:
   - resources:
-    - key: "cloudsql-\\d+"
+    - name: "cloudsql-\\d+"
     conditions:
       # The "reason" and "message" fields will be treated as wildcards.
     - type: Synced
@@ -144,12 +144,12 @@ statusConditionHooks:
 # be set
 - matchers:
   - resources:
-    - key: "cloudsql"
+    - name: "cloudsql"
     conditions:
     - type: Synced
       status: "True"
   - resources:
-    - "cloudsql"
+    - name: "cloudsql"
     conditions:
     - type: Ready
       status: "True"
@@ -193,6 +193,21 @@ statusConditionHooks:
       message: "Encountered an error creating the database: {{ .Error }}"
 ```
 
+### Matching the Composite Resource
+You can match against the composite resource. To do this, use
+`includeCompositeAsResource` as seen below.
+```yaml
+apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
+kind: StatusTransformation
+statusConditionHooks:
+- matchers:
+  - includeCompositeAsResource: true
+    conditions:
+    - type: Synced
+      status: "False"
+      reason: "SomeError"
+```
+
 ### Matching Missing Conditions
 You can match against missing conditions. To do this, use the default unknown
 condition values.
@@ -202,7 +217,7 @@ kind: StatusTransformation
 statusConditionHooks:
 - matchers:
   - resources:
-    - key: "cloudsql"
+    - name: "cloudsql"
     conditions:
       # These are the values seen when a condition does not exist.
     - type: Synced
@@ -267,7 +282,7 @@ spec:
       statusConditionHooks:
       - matchers:
         - resources:
-          - key: "cloudsql-instance"
+          - name: "cloudsql-instance"
           conditions:
           - type: Synced
             status: "False"

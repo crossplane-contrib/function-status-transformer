@@ -12,7 +12,7 @@ import (
 	"k8s.io/utils/ptr"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	fnv1beta1 "github.com/crossplane/function-sdk-go/proto/v1beta1"
+	fnv1 "github.com/crossplane/function-sdk-go/proto/v1"
 	"github.com/crossplane/function-sdk-go/resource"
 	"github.com/crossplane/function-sdk-go/response"
 )
@@ -21,10 +21,10 @@ func TestRunFunction(t *testing.T) {
 
 	type args struct {
 		ctx context.Context
-		req *fnv1beta1.RunFunctionRequest
+		req *fnv1.RunFunctionRequest
 	}
 	type want struct {
-		rsp        *fnv1beta1.RunFunctionResponse
+		rsp        *fnv1.RunFunctionResponse
 		cleanError bool
 		err        error
 	}
@@ -38,8 +38,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "The function should be able to capture regex groups and use them when setting conditions.",
 			args: args{
 				ctx: context.Background(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -88,8 +88,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 `),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 {
@@ -115,30 +115,30 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{
 						{
-							Severity: fnv1beta1.Severity_SEVERITY_NORMAL,
+							Severity: fnv1.Severity_SEVERITY_NORMAL,
 							Message:  "some lower level error",
 							Reason:   ptr.To("InternalError"),
-							Target:   fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:   fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
-					Conditions: []*fnv1beta1.Condition{
+					Conditions: []*fnv1.Condition{
 						{
 							Type:   "CustomReady",
-							Status: fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status: fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason: "InternalError",
 							// We should only see the lower level error included.
 							Message: ptr.To("some lower level error"),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -148,8 +148,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "When a matchCondition field is nil, it should act as a wildcard.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -272,8 +272,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 				{
@@ -299,43 +299,43 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "NilStatus",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Test",
 							Message: ptr.To("Testing wildcard matching."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:    "NilReason",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Test",
 							Message: ptr.To("Testing wildcard matching."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:    "NilMessage",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Test",
 							Message: ptr.To("Testing wildcard matching."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:    "NilAll",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Test",
 							Message: ptr.To("Testing wildcard matching."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -345,8 +345,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "Match conditions should be ANDed together.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -441,8 +441,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 				{
@@ -472,22 +472,22 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "MatchedBoth",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "ShouldMatchBoth",
 							Message: ptr.To("Match conditions are ANDed together. Both conditions should match."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -497,8 +497,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "The same condition should not be overridden by default. Override should be possible by setting force.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -599,8 +599,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 				{
@@ -626,39 +626,39 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:   "ConditionA",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "SetFirst",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
 						},
 						{
 							Type:   "ConditionB",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "SetFirst",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
 						},
 						{
 							Type:   "ConditionB",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "SetSecond",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
 						},
 						{
 							Type:   "ConditionB",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "SetThird",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -668,8 +668,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "You should be able to set conditions for missing resources by matching on the default Unknown status.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -707,8 +707,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 		{
@@ -727,21 +727,21 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:   "CustomReady",
-							Status: fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status: fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason: "DoesNotExist",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -751,8 +751,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "If no match conditions are given, it should not match anything.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 				{
 				  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -774,8 +774,8 @@ func TestRunFunction(t *testing.T) {
 				  ]
 				}
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 		{
@@ -801,15 +801,15 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -819,8 +819,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "If a match condition does not find a resource to match against, it should evaluate to false.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -858,8 +858,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"resource-key-b": {
 								Resource: resource.MustStructJSON(`
 		{
@@ -885,15 +885,15 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -903,8 +903,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "Users should be able to effectively set a default condition by providing a matchCondition of a custom type that matches the default values. They will still be required to match on the resourceKey.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -972,8 +972,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"resource-key-a": {
 								Resource: resource.MustStructJSON(`
 		{
@@ -999,21 +999,21 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:   "CustomReady",
-							Status: fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status: fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason: "DefaultCondition",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE_AND_CLAIM.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -1023,8 +1023,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "The function should set the shared status condition to false when encountering a regex failure when matching the message.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1063,8 +1063,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 				{
@@ -1090,15 +1090,15 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "StatusTransformationSuccess",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "MatchFailure",
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 							Message: ptr.To("cannot match resources, statusConditionHookIndex: 0, matchConditionIndex: 0: cannot compile message regex: error parsing regexp: invalid or unsupported Perl syntax: `(?!`"),
 						},
 					},
@@ -1109,8 +1109,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "The function should set the shared status condition to false when encountering a regex failure when matching the resourceName.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1148,8 +1148,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 				{
@@ -1175,15 +1175,15 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "StatusTransformationSuccess",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "MatchFailure",
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 							Message: ptr.To("cannot match resources, statusConditionHookIndex: 0, matchConditionIndex: 0: cannot compile resource key regex, resourcesIndex: 0: error parsing regexp: invalid or unsupported Perl syntax: `(?!`"),
 						},
 					},
@@ -1194,8 +1194,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "The function should set the shared status condition to false when encountering a template parsing error.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1234,8 +1234,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 				{
@@ -1261,15 +1261,15 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "StatusTransformationSuccess",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "SetConditionFailure",
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 							Message: ptr.To("cannot set condition, statusConditionHookIndex: 0, setConditionIndex: 0: cannot parse template: template: :1: unexpected \"}\" in operand"),
 						},
 					},
@@ -1280,8 +1280,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "When encountering an error with a matchCondition, the parent statusConditionHook should be skipped but other statusConditionHooks should still execute. When encountering an error with a setCondition, only that individual setCondition should be skipped.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1359,8 +1359,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 				{
@@ -1386,29 +1386,29 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "StatusTransformationSuccess",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "MatchFailure",
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 							Message: ptr.To("cannot match resources, statusConditionHookIndex: 0, matchConditionIndex: 0: cannot compile message regex: error parsing regexp: invalid or unsupported Perl syntax: `(?!`"),
 						},
 						{
 							Type:    "StatusTransformationSuccess",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "SetConditionFailure",
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 							Message: ptr.To("cannot set condition, statusConditionHookIndex: 1, setConditionIndex: 0: cannot parse template: template: :1: unexpected \"}\" in operand"),
 						},
 						{
 							Type:    "CustomReady",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "InternalError",
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 							Message: ptr.To("this condition should be set, error: some lower level error"),
 						},
 					},
@@ -1419,29 +1419,29 @@ func TestRunFunction(t *testing.T) {
 			reason: "The function should fail if the input cannot be parsed.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 				{
 								"object": "not valid"
 				}
 				`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{},
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{},
 					},
 				},
 			},
 			want: want{
 				cleanError: true,
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "StatusTransformationSuccess",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "InputFailure",
-							Message: ptr.To("cannot get Function input from *v1beta1.RunFunctionRequest: cannot get function input *v1beta1.StatusTransformation from *v1beta1.RunFunctionRequest: cannot unmarshal JSON from *structpb.Struct into *v1beta1.StatusTransformation: json: cannot unmarshal Go value of type v1beta1.StatusTransformation: unknown name \"object\""),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Message: ptr.To("cannot get Function input from *v1.RunFunctionRequest: cannot get function input *v1beta1.StatusTransformation from *v1.RunFunctionRequest: cannot unmarshal JSON from *structpb.Struct into *v1beta1.StatusTransformation: json: cannot unmarshal Go value of type v1beta1.StatusTransformation: unknown name \"object\""),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -1451,8 +1451,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "The function should set a non-successful status if it encounters an event with an invalid type.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1490,8 +1490,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 		`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 		{
@@ -1517,15 +1517,15 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta:    &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "StatusTransformationSuccess",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "SetConditionFailure",
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 							Message: ptr.To("cannot create event, statusConditionHookIndex: 0, createEventIndex: 0: invalid type ThisIsAnInvalidType, must be one of [Normal, Warning]"),
 						},
 					},
@@ -1536,8 +1536,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "If no event type is given, it should default to normal.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1574,8 +1574,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 		`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 		{
@@ -1601,22 +1601,22 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{
 						{
-							Severity: fnv1beta1.Severity_SEVERITY_NORMAL,
+							Severity: fnv1.Severity_SEVERITY_NORMAL,
 							Message:  "Some message.",
 							Reason:   ptr.To("InternalError"),
-							Target:   fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:   fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
-					Conditions: []*fnv1beta1.Condition{
+					Conditions: []*fnv1.Condition{
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -1626,8 +1626,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "Target should be an optional field. Should default to Composite.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1673,8 +1673,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 		`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"example-mr": {
 								Resource: resource.MustStructJSON(`
 		{
@@ -1700,29 +1700,29 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Results: []*fnv1beta1.Result{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{
 						{
-							Severity: fnv1beta1.Severity_SEVERITY_NORMAL,
+							Severity: fnv1.Severity_SEVERITY_NORMAL,
 							Message:  "Some message.",
 							Reason:   ptr.To("InternalError"),
-							Target:   fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:   fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
-					Conditions: []*fnv1beta1.Condition{
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "CustomReady",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_FALSE,
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "InternalError",
 							Message: ptr.To("some lower level error"),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -1732,8 +1732,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "AnyResourceMatchesAnyCondition should behave as expected.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -1866,8 +1866,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 						`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							// Resource A will not match to ensure it is treated as ANY and
 							// not ALL.
 							"resource-a": {
@@ -1907,21 +1907,21 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "ShouldBeSet",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Testing",
 							Message: ptr.To("This condition should be set because the second condition matches resource-b."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -1931,8 +1931,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "AnyResourceMatchesAllConditions should behave as expected.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -2062,8 +2062,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 		`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"resource-a": {
 								Resource: resource.MustStructJSON(`
 {
@@ -2114,21 +2114,21 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "ShouldBeSet",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Testing",
 							Message: ptr.To("This condition should be set. All conditions are matched by resource-a."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -2138,8 +2138,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "AllResourcesMatchAnyCondition should behave as expected.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -2271,8 +2271,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 		`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"resource-a": {
 								Resource: resource.MustStructJSON(`
 {
@@ -2353,21 +2353,21 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "ShouldBeSet",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Testing",
 							Message: ptr.To("This condition should be set. All resources are matched by the second condition."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
@@ -2377,8 +2377,8 @@ func TestRunFunction(t *testing.T) {
 			reason: "AllResourcesMatchAllConditions should behave as expected.",
 			args: args{
 				ctx: context.TODO(),
-				req: &fnv1beta1.RunFunctionRequest{
-					Meta: &fnv1beta1.RequestMeta{Tag: "hello"},
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
 					Input: resource.MustStructJSON(`
 {
   "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
@@ -2545,8 +2545,8 @@ func TestRunFunction(t *testing.T) {
   ]
 }
 		`),
-					Observed: &fnv1beta1.State{
-						Resources: map[string]*fnv1beta1.Resource{
+					Observed: &fnv1.State{
+						Resources: map[string]*fnv1.Resource{
 							"resource-a": {
 								Resource: resource.MustStructJSON(`
 {
@@ -2627,21 +2627,213 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 			want: want{
-				rsp: &fnv1beta1.RunFunctionResponse{
-					Meta: &fnv1beta1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
-					Conditions: []*fnv1beta1.Condition{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Conditions: []*fnv1.Condition{
 						{
 							Type:    "ShouldBeSet",
-							Status:  fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status:  fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason:  "Testing",
 							Message: ptr.To("This condition should be set. All resources match all conditions."),
-							Target:  fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 						{
 							Type:   "StatusTransformationSuccess",
-							Status: fnv1beta1.Status_STATUS_CONDITION_TRUE,
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
 							Reason: "Available",
-							Target: fnv1beta1.Target_TARGET_COMPOSITE.Enum(),
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"MatchTheCompositeResource": {
+			reason: "The function should allow you to match conditions on the composite resource.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeCompositeAsResource": true,
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
+        }
+      ],
+      "createEvents": [
+        {
+          "target": "Composite",
+          "event": {
+            "type": "Normal",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+					Observed: &fnv1.State{
+						Composite: &fnv1.Resource{
+							Resource: resource.MustStructJSON(`
+{
+	"apiVersion": "some.example.com/v1alpha1",
+	"kind": "Object",
+	"metadata": {
+		"name": "example-name"
+	},
+	"status": {
+		"conditions": [
+			{
+				"message": "Something went wrong: some lower level error",
+				"reason": "ReconcileError",
+				"status": "False",
+				"type": "Synced"
+			}
+		]
+	}
+}`),
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta: &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{
+						{
+							Severity: fnv1.Severity_SEVERITY_NORMAL,
+							Message:  "some lower level error",
+							Reason:   ptr.To("InternalError"),
+							Target:   fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:   "CustomReady",
+							Status: fnv1.Status_STATUS_CONDITION_FALSE,
+							Reason: "InternalError",
+							// We should only see the lower level error included.
+							Message: ptr.To("some lower level error"),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+				},
+			},
+		},
+		"DoNotMatchTheCompositeResourceByDefault": {
+			reason: "The function should not match on the composite resource by default.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "conditions": [
+            {
+              "type": "Synced",
+              "status": "False",
+              "reason": "ReconcileError",
+              "message": "Something went wrong: (?P<Error>.+)"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "False",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
+        }
+      ],
+      "createEvents": [
+        {
+          "target": "Composite",
+          "event": {
+            "type": "Normal",
+            "reason": "InternalError",
+            "message": "{{ .Error }}"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+					Observed: &fnv1.State{
+						Composite: &fnv1.Resource{
+							Resource: resource.MustStructJSON(`
+{
+	"apiVersion": "some.example.com/v1alpha1",
+	"kind": "Object",
+	"metadata": {
+		"name": "example-name"
+	},
+	"status": {
+		"conditions": [
+			{
+				"message": "Something went wrong: some lower level error",
+				"reason": "ReconcileError",
+				"status": "False",
+				"type": "Synced"
+			}
+		]
+	}
+}`),
+						},
+					},
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 				},
