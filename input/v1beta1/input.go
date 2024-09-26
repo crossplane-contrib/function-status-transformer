@@ -93,6 +93,10 @@ type Matcher struct {
 
 	// Conditions that must exist on the resource(s).
 	Conditions []ConditionMatcher `json:"conditions"`
+
+	// IncludeCompositeAsResource allows you to add the Composite Resource to the
+	// list of resources.
+	IncludeCompositeAsResource *bool `json:"includeCompositeAsResource"`
 }
 
 // ResourceMatcher allows you to select one or more resources.

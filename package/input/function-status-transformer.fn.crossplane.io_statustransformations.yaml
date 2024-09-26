@@ -118,6 +118,11 @@ spec:
                           - type
                           type: object
                         type: array
+                      includeCompositeAsResource:
+                        description: |-
+                          IncludeCompositeAsResource allows you to add the Composite Resource to the
+                          list of resources.
+                        type: boolean
                       name:
                         description: Name of the matcher. Optional. Will be used in
                           logging.
@@ -151,6 +156,7 @@ spec:
                         type: string
                     required:
                     - conditions
+                    - includeCompositeAsResource
                     - name
                     - resources
                     - type
