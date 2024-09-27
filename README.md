@@ -1,5 +1,5 @@
 # function-status-transformer
-[![CI](https://github.com/crossplane-contrib/function-status-transformer/actions/workflows/ci.yml/badge.svg)](https://github.com/dalton-hill-0/function-status-transformer/actions/workflows/ci.yml)
+[![CI](https://github.com/crossplane-contrib/function-status-transformer/actions/workflows/ci.yml/badge.svg)](https://github.com/crossplane-contrib/function-status-transformer/actions/workflows/ci.yml)
 
 - [Requirements](#requirements)
 - [Usage](#usage)
