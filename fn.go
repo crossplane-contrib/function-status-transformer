@@ -39,8 +39,9 @@ const (
 	// Context keys.
 	logKey contextKey = "log"
 
-	// Unique keys.
-	compositeResourceKey = "COMPOSITE_RESOURCE"
+	// Reserved keys.
+	reservedKeyPrefix    = "function-status-transformer.reserved-keys."
+	compositeResourceKey = reservedKeyPrefix + "composite-resource"
 )
 
 // Function returns whatever response you ask it to.
