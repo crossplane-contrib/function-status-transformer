@@ -9,6 +9,7 @@
   - [Condition Matching Wildcards](#condition-matching-wildcards)
   - [MatchConditions are ANDed](#matchconditions-are-anded)
   - [Overriding Conditions](#overriding-conditions)
+  - [Matching the Composite Resource](#matching-the-composite-resource)
   - [Matching Missing Conditions](#matching-missing-conditions)
   - [Setting Default Conditions](#setting-default-conditions)
   - [Creating Events](#creating-events)
