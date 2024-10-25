@@ -26,6 +26,7 @@ github.com/cpuguy83/go-md2man/v2 v2.0.4/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46t
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/crossplane/crossplane v1.17.1 h1:c8fr3hC/6y9rkYlOer4qEqduMQ4DXf2rwtIyj7xXpFU=
 github.com/crossplane/crossplane v1.17.1/go.mod h1:AoDLpKyrFqNDnDPkFDY2Csaqv+c0EyVyqdUDJcP9Xk8=
+github.com/crossplane/crossplane v1.17.2/go.mod h1:KAoOkSa6i9EW+Q9yseuf6GLKSko2HWztkNrFTMeh1bc=
 github.com/crossplane/crossplane-runtime v1.17.0 h1:y+GvxPT1M9s8BKt2AeZJdd2d6pg2xZeCO6LiR+VxEF8=
 github.com/crossplane/crossplane-runtime v1.17.0/go.mod h1:vtglCrnnbq2HurAk9yLHa4qS0bbnCxaKL7C21cQcB/0=
 github.com/crossplane/function-sdk-go v0.3.0 h1:ezutyOxtRXhIMSB93mzyp8pc4G7N9e9SRs5KqW5x6sU=
