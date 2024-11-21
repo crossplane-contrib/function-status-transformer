@@ -52,6 +52,10 @@ spec:
       statusConditionHooks:
       - matchers:
         - resources: 
+          # Note that "name" refers to the resource's identifier within the
+          # Composition and not the object's metadata.name. 
+          # Related documentation:
+          # https://docs.crossplane.io/latest/guides/function-patch-and-transform/#resource-templates
           - name: "cloudsql-instance"
           conditions:
           - type: Synced
