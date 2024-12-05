@@ -7,7 +7,7 @@ toolchain go1.23.4
 require (
 	github.com/alecthomas/kong v0.9.0
 	github.com/crossplane/crossplane v1.17.2
-	github.com/crossplane/crossplane-runtime v1.17.0
+	github.com/crossplane/crossplane-runtime v1.18.0
 	github.com/crossplane/function-sdk-go v0.3.0
 	github.com/google/go-cmp v0.6.0
 	google.golang.org/protobuf v1.35.2
@@ -17,7 +17,7 @@ require (
 )
 
 require (
-	dario.cat/mergo v1.0.0 // indirect
+	dario.cat/mergo v1.0.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -85,7 +85,7 @@ require (
 	k8s.io/component-base v0.31.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // indirect
-	sigs.k8s.io/controller-runtime v0.18.2 // indirect
+	sigs.k8s.io/controller-runtime v0.19.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.4.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
