@@ -52,6 +52,8 @@ type Function struct {
 }
 
 // RunFunction runs the Function.
+//
+//nolint:gocyclo
 func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest) (*fnv1.RunFunctionResponse, error) {
 	log := f.log.WithValues("tag", req.GetMeta().GetTag())
 	log.Debug("running function")
@@ -170,6 +172,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 	return rsp, nil
 }
 
+//nolint:gocyclo
 func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[string]*fnv1.Resource, xr *sdkresource.Composite) (bool, map[string]string, error) {
 	log := ctx.Value(logKey).(logging.Logger)
 
