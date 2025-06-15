@@ -1,4 +1,5 @@
 # function-status-transformer
+
 [![CI](https://github.com/crossplane-contrib/function-status-transformer/actions/workflows/ci.yml/badge.svg)](https://github.com/crossplane-contrib/function-status-transformer/actions/workflows/ci.yml)
 
 - [Requirements](#requirements)
@@ -7,7 +8,7 @@
   - [Using Regular Expressions to Capture Message Data](#using-regular-expressions-to-capture-message-data)
   - [Using Regular Expressions to Match Multiple Resources](#using-regular-expressions-to-match-multiple-resources)
   - [Condition Matching Wildcards](#condition-matching-wildcards)
-  - [MatchConditions are ANDed](#matchconditions-are-anded)
+  - [MatchConditions are ANDed](#matchers-are-anded)
   - [Overriding Conditions](#overriding-conditions)
   - [Matching the Composite Resource](#matching-the-composite-resource)
   - [Matching Missing Conditions](#matching-missing-conditions)
@@ -21,18 +22,22 @@
   - [Failure to Set a Condition Message Template](#failure-to-set-a-condition-message-template)
 
 ## Requirements
+
 This function requires Crossplane v1.17 or newer.
 
 ## Usage
+
 Function Status Transformer allows you to create hooks that will trigger by
 matching the status conditions of managed resources. Each hook can be configured
 to set one or more status conditions on the composite resource and the claim.
 
 ### Basic Usage
+
 Here is a basic usage example. The function will look for the
 `cloudsql-instance` resource within the observed resource map. If that resource
 matches the specified condition criteria, the condition in `setConditions` will
 get set on both the composite resource and the claim.
+
 ```yaml
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
@@ -72,9 +77,11 @@ spec:
 ```
 
 ### Using Regular Expressions to Capture Message Data
+
 You can use regular expressions to capture data from the status condition
 message on the managed resource. The captured groups can then be inserted into
 status condition and event messages on the composite resource and claim.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -103,11 +110,13 @@ statusConditionHooks:
 ```
 
 ### Using Regular Expressions to Match Multiple Resources
+
 You can use regular expressions in the `resourceKey`. This will allow you to
 match multiple resources of a similar type. For instance, say you spin up
 multiple instances of the same type and name them like `cloudsql-1`,
 `cloudsql-2`, etc. You could write a single hook to handle all of these by using
 a resource key of `cloudsql-\\d+`.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -122,9 +131,11 @@ statusConditionHooks:
 ```
 
 ### Condition Matching Wildcards
+
 If you do not care about the particular value of a status condition that you are
 matching against, you can leave it empty and it will act as a wildcard. The only
 value that cannot be left empty is the `type`.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -139,8 +150,10 @@ statusConditionHooks:
 ```
 
 ### Matchers are ANDed
+
 When using multiple `matchers`, they must all match before `setConditions` will
 be triggered.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -162,11 +175,13 @@ statusConditionHooks:
 ```
 
 ### Overriding Conditions
+
 Hooks will be executed in order. By default a `setCondition` will not set a
 condition that was previously set by function-status-transformer (Note: This
 does not apply to conditions set by previous functions in the pipeline).
 Condition uniqueness is determined by the `type`. To override a condition that
 was already set, you can use `force`.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -199,8 +214,10 @@ statusConditionHooks:
 ```
 
 ### Matching the Composite Resource
+
 You can match against the composite resource. To do this, use
 `includeCompositeAsResource` as seen below.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -214,8 +231,10 @@ statusConditionHooks:
 ```
 
 ### Matching Missing Conditions
+
 You can match against missing conditions. To do this, use the default unknown
 condition values.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -232,6 +251,7 @@ statusConditionHooks:
 ```
 
 ### Setting Default Conditions
+
 If you want to set one or more conditions when no other hook has matched, you
 can do this by placing a hook at the end and make sure the `setCondition`
 `force` values are omitted or set to false. For matching, you can either use all
@@ -239,6 +259,7 @@ wildcard fields (see [Condition Matching
 Wildcards](#condition-matching-wildcards)) or you can specify a type that will
 never exist. The only requirement is that the `resourceKey` must match one or
 more resources.
+
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
 kind: StatusTransformation
@@ -262,12 +283,14 @@ statusConditionHooks:
 ```
 
 ### Creating Events
+
 In addition to setting conditions, you can also create events for both the
 composite resource and the claim. You should note that events should be created
 sparingly, and will be limited by the behavior documented in
 [5802](https://github.com/crossplane/crossplane/issues/5802)
 
 To create events, use `createEvents` as seen below.
+
 ```yaml
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
@@ -302,11 +325,13 @@ spec:
 ```
 
 ### Customizing Matching Behavior
+
 Any given matcher will first find all resources selected by `matcher.resources`.
 It will then compare the status conditions of the resources against the status
 conditions found in `matcher.conditions`. You can customize the comparison
 behavior by setting `matcher.type`. The different match types and their
 behaviors can be seen below.
+
 - `AnyResourceMatchesAnyCondition` - Considered a match if any resource matches
   any condition. An example use case would be if you want to transform any error
   condition from one of your managed resources into an error condition on your
@@ -325,6 +350,7 @@ behaviors can be seen below.
   everything is ready to go.
 
 ## Determining the Status of the Function Itself
+
 The status of this function can be found by viewing the
 `StatusTransformationSuccess` status condition on the composite resource. The
 function will use this status condition to communicate its own state and will
@@ -334,12 +360,15 @@ following sections on some common conditions you may encounter and what they
 mean.
 
 Notes:
+
 - Any error encountered within a `statusConditionHook` will be logged, but only
   the last error will be present on the `StatusTransformationSuccess` condition.
 
 ### Success
-If no failures are encountered, the `StatusTransformationSuccess` condition will be
-set to `True` with a reason of `Available`.
+
+If no failures are encountered, the `StatusTransformationSuccess` condition will
+be set to `True` with a reason of `Available`.
+
 ```yaml
 - lastTransitionTime: "2024-08-02T15:57:20Z"
   reason: Available
@@ -348,9 +377,11 @@ set to `True` with a reason of `Available`.
 ```
 
 ### Failure to Parse Input
-If an invalid input is provided, the `StatusTransformationSuccess` condition will be
-set to `False` with a reason of `InputFailure`. Note that no `matchCondition` or
-`setCondition` will be evaluated.
+
+If an invalid input is provided, the `StatusTransformationSuccess` condition
+will be set to `False` with a reason of `InputFailure`. Note that no
+`matchCondition` or `setCondition` will be evaluated.
+
 ```yaml
 - lastTransitionTime: "2024-08-02T15:11:35Z"
   message: 'cannot get Function input from *v1beta1.RunFunctionRequest: cannot get
@@ -364,12 +395,14 @@ set to `False` with a reason of `InputFailure`. Note that no `matchCondition` or
 ```
 
 ### Failure to Match a Regular Expression
+
 If an invalid regular expression is provided in a `matchCondition` `message` or
 `resourceKey`, the `StatusTransformationSuccess` condition will be set to
 `False` with a reason of `MatchFailure`. Note that no further `matchCondition`
 will be evaluated for corresponding `statusConditionHook` and the overall result
 of matching for the hook will be a failure. All other `statusConditionHooks`
 will attempt to be evaluated as normal.
+
 ```yaml
 - lastTransitionTime: "2024-08-02T15:29:51Z"
   message: 'error when matching, statusConditionHookIndex: 0, matchConditionIndex:
@@ -381,9 +414,11 @@ will attempt to be evaluated as normal.
 ```
 
 ### Failure to Set a Condition Message Template
+
 If an invalid template is provided in a `setCondition` message, the
 `StatusTransformationSuccess` condition will be set to `False` with a reason of
 `SetConditionFailure`.
+
 ```yaml
 - lastTransitionTime: "2024-08-02T15:46:45Z"
   message: 'failed to set condition, statusConditionHookIndex: 0, setConditionIndex:
