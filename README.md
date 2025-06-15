@@ -8,7 +8,7 @@
   - [Using Regular Expressions to Capture Message Data](#using-regular-expressions-to-capture-message-data)
   - [Using Regular Expressions to Match Multiple Resources](#using-regular-expressions-to-match-multiple-resources)
   - [Condition Matching Wildcards](#condition-matching-wildcards)
-  - [MatchConditions are ANDed](#matchers-are-anded)
+  - [Matchers are ANDed](#matchers-are-anded)
   - [Overriding Conditions](#overriding-conditions)
   - [Matching the Composite Resource](#matching-the-composite-resource)
   - [Matching Missing Conditions](#matching-missing-conditions)
