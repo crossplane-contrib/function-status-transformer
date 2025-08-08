@@ -4,7 +4,7 @@ go 1.24.4
 
 require (
 	github.com/alecthomas/kong v1.11.0
-	github.com/crossplane/crossplane-runtime v1.20.0
+	github.com/crossplane/crossplane-runtime/v2 v2.0.0
 	github.com/crossplane/function-sdk-go v0.4.0
 	github.com/google/go-cmp v0.7.0
 	google.golang.org/protobuf v1.36.6
@@ -15,6 +15,7 @@ require (
 
 require (
 	dario.cat/mergo v1.0.1 // indirect
+	github.com/crossplane/crossplane-runtime v1.18.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/emicklei/go-restful/v3 v3.12.1 // indirect
 	github.com/evanphx/json-patch/v5 v5.9.0 // indirect
