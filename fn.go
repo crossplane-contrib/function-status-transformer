@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"maps"
 	"regexp"
+	"strings"
 	"text/template"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
 
 	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
@@ -21,6 +24,21 @@ import (
 	"github.com/crossplane/function-sdk-go/response"
 	"github.com/crossplane/function-status-transformer/input/v1beta1"
 )
+
+// TODO: test to see if a Deployment's status condition can be used here.
+// It doesn't exactly match crossplane's conditions
+
+// TODO:
+// - create Group instance to test function
+// - test basic functionality
+// - build solution
+// - build tests
+
+// TODO: (dalton) since all matching seems to be on the name of the resource,
+// we will need to load in the extra resources and create names for them, such
+// as extra-resource.GVK.namespace/name. Though we probably want to leave out
+// version to prevent breaking any matching after an object is upgraded.
+// e.g., name: extra-resource.apps.Deployment.default/hello
 
 type contextKey string
 
@@ -59,6 +77,15 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 	log.Debug("running function")
 
 	rsp := response.To(req, response.DefaultTTL)
+
+	extraResources, err := getExtraResources(req)
+	if err != nil {
+		msg := "cannot load extra-resources"
+		log.Info(msg, "error", err)
+		response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
+			WithMessage(errors.Wrap(err, msg).Error())
+		return rsp, nil
+	}
 
 	in := &v1beta1.StatusTransformation{}
 	if err := request.GetInput(req, in); err != nil {
@@ -100,7 +127,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 			log := log.WithValues("matchConditionIndex", mci)
 			ctx := context.WithValue(ctx, logKey, log)
 
-			matched, mcGroups, err := matchResources(ctx, mc, observed, xr)
+			matched, mcGroups, err := matchResources(ctx, mc, observed, xr, extraResources)
 			if err != nil {
 				log.Info("cannot match resources", "error", err)
 				response.ConditionFalse(rsp, typeFunctionSuccess, reasonMatchFailure).
@@ -117,9 +144,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 			allMatched = true
 
 			// All matches were successful, copy over any regex groups.
-			for k, v := range mcGroups {
-				scGroups[k] = v
-			}
+			maps.Copy(scGroups, mcGroups)
 		}
 
 		if !allMatched {
@@ -173,7 +198,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 }
 
 //nolint:gocyclo // Feels naturally complex.
-func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[string]*fnv1.Resource, xr *sdkresource.Composite) (bool, map[string]string, error) {
+func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[string]*fnv1.Resource, xr *sdkresource.Composite, extraResources []conditionedObject) (bool, map[string]string, error) {
 	log := ctx.Value(logKey).(logging.Logger)
 
 	rs := map[string]conditionedObject{}
@@ -191,6 +216,20 @@ func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[str
 					return false, nil, errors.Wrapf(err, "cannot convert resource to object, resourcesIndex: %d, observedMapKey: %s", i, k)
 				}
 				rs[k] = u
+			}
+		}
+		for _, o := range extraResources {
+			// Constructs a key (e.g., extra-resource.apps.Deployment.namespace/name).
+			keyParts := []string{
+				"extra-resource",
+				o.GetObjectKind().GroupVersionKind().Group,
+				o.GetObjectKind().GroupVersionKind().Kind,
+				o.GetNamespace(),
+				o.GetName(),
+			}
+			key := strings.Join(keyParts, ".")
+			if re.MatchString(key) {
+				rs[key] = o
 			}
 		}
 	}
@@ -261,9 +300,7 @@ func anyResourceMatchesAllConditions(ctx context.Context, cms []v1beta1.Conditio
 				break
 			}
 			matched++
-			for k, v := range cg {
-				capturedGroups[k] = v
-			}
+			maps.Copy(capturedGroups, cg)
 		}
 		if matched == len(cms) {
 			return true, capturedGroups, nil
@@ -290,9 +327,7 @@ func allResourcesMatchAnyConditions(ctx context.Context, cms []v1beta1.Condition
 				continue
 			}
 			matched++
-			for k, v := range cg {
-				capturedGroups[k] = v
-			}
+			maps.Copy(capturedGroups, cg)
 		}
 		if matched == 0 {
 			return false, nil, nil
@@ -317,9 +352,7 @@ func allResourcesMatchAllConditions(ctx context.Context, cms []v1beta1.Condition
 			if !m {
 				return false, nil, nil
 			}
-			for k, v := range cg {
-				capturedGroups[k] = v
-			}
+			maps.Copy(capturedGroups, cg)
 		}
 	}
 
@@ -443,4 +476,41 @@ func templateMessage(msg *string, values map[string]string) (*string, error) {
 type conditionedObject interface {
 	resource.Object
 	resource.Conditioned
+}
+
+// getExtraResources loads extra resources provided by the extra-resources
+// function.
+func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error) {
+	// Load extra resources and only consider those who have conditions that can
+	// be evaluated similarly to existing XP conditioned objects.
+	exRe, ok := req.Context.AsMap()["apiextensions.crossplane.io/extra-resources"]
+	if !ok {
+		return nil, nil
+	}
+
+	exReMap, ok := exRe.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("unexpected extra-resources type: %T", exRe)
+	}
+
+	var cs []conditionedObject
+	for k, v := range exReMap {
+		vs, ok := v.([]any)
+		if !ok {
+			return nil, fmt.Errorf("unexpected extra-resources value type for %s: %T", k, v)
+		}
+		for i, v2 := range vs {
+			data, ok := v2.(map[string]any)
+			if !ok {
+				return nil, fmt.Errorf("unexpected extra-resources value type for %s [%d]: %T", k, i, v2)
+			}
+			cs = append(cs, &composed.Unstructured{
+				Unstructured: unstructured.Unstructured{
+					Object: data,
+				},
+			})
+		}
+	}
+
+	return cs, nil
 }
