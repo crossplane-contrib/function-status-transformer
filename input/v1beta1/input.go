@@ -95,8 +95,15 @@ type Matcher struct {
 	Conditions []ConditionMatcher `json:"conditions"`
 
 	// IncludeCompositeAsResource allows you to add the Composite Resource to the
-	// list of resources.
+	// list of matched resources.
 	IncludeCompositeAsResource *bool `json:"includeCompositeAsResource"`
+
+	// IncludeExtraResources will check for resources from the extra-resources
+	// function and include them to be matched against. These resources will have
+	// names that follow the pattern
+	// "extra-resource.<group>.<kind>.<namespace>.name"
+	// (e.g., extra-resource.apps.Deployment.default.nginx)
+	IncludeExtraResources *bool `json:"includeExtraResources"`
 }
 
 // ResourceMatcher allows you to select one or more resources.
