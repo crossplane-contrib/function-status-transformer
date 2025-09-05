@@ -78,15 +78,6 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 
 	rsp := response.To(req, response.DefaultTTL)
 
-	extraResources, err := getExtraResources(req)
-	if err != nil {
-		msg := "cannot load extra-resources"
-		log.Info(msg, "error", err)
-		response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
-			WithMessage(errors.Wrap(err, msg).Error())
-		return rsp, nil
-	}
-
 	in := &v1beta1.StatusTransformation{}
 	if err := request.GetInput(req, in); err != nil {
 		msg := fmt.Sprintf("cannot get Function input from %T", req)
@@ -118,6 +109,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 
 	errored := false
 	conditionsSet := map[string]bool{}
+	var extraResources []conditionedObject
 	for shi, sh := range in.StatusConditionHooks {
 		log := log.WithValues("statusConditionHookIndex", shi)
 		// The regular expression groups found in the matches.
@@ -126,6 +118,18 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 		for mci, mc := range sh.Matchers {
 			log := log.WithValues("matchConditionIndex", mci)
 			ctx := context.WithValue(ctx, logKey, log)
+
+			if ptr.Deref(mc.IncludeExtraResources, false) && extraResources == nil {
+				// This matcher wants to include extra resources and we have not yet
+				// loaded the extra resources.
+				if extraResources, err = getExtraResources(req); err != nil {
+					msg := "cannot load extra-resources"
+					log.Info(msg, "error", err)
+					response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
+						WithMessage(errors.Wrap(err, msg).Error())
+					return rsp, nil
+				}
+			}
 
 			matched, mcGroups, err := matchResources(ctx, mc, observed, xr, extraResources)
 			if err != nil {
@@ -201,6 +205,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[string]*fnv1.Resource, xr *sdkresource.Composite, extraResources []conditionedObject) (bool, map[string]string, error) {
 	log := ctx.Value(logKey).(logging.Logger)
 
+	includeExtraResources := ptr.Deref(mc.IncludeExtraResources, false)
 	rs := map[string]conditionedObject{}
 	for i, r := range mc.Resources {
 		re, err := regexp.Compile(r.Name)
@@ -217,6 +222,10 @@ func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[str
 				}
 				rs[k] = u
 			}
+		}
+
+		if !includeExtraResources {
+			continue
 		}
 		for _, o := range extraResources {
 			// Constructs a key (e.g., extra-resource.apps.Deployment.namespace/name).
@@ -485,7 +494,7 @@ func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error
 	// be evaluated similarly to existing XP conditioned objects.
 	exRe, ok := req.Context.AsMap()["apiextensions.crossplane.io/extra-resources"]
 	if !ok {
-		return nil, nil
+		return []conditionedObject{}, nil
 	}
 
 	exReMap, ok := exRe.(map[string]any)
@@ -493,7 +502,7 @@ func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error
 		return nil, fmt.Errorf("unexpected extra-resources type: %T", exRe)
 	}
 
-	var cs []conditionedObject
+	cs := []conditionedObject{}
 	for k, v := range exReMap {
 		vs, ok := v.([]any)
 		if !ok {
