@@ -3085,7 +3085,121 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 		},
-		// TODO: A non-namespaced resource should just show ..
+		"ClusterScopedExtraResources": {
+			reason: "Cluster-scoped extra resources should have an empty segment in their matching name (e.g., extra-resource.apps.Deploy..example)",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": [
+      {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+          "name": "example"
+        },
+        "status": {
+          "conditions": [
+            {
+              "message": "Deployment has minimum availability.",
+              "reason": "MinimumReplicasAvailable",
+              "status": "True",
+              "type": "Available"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+`),
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeExtraResources": true,
+          "resources": [
+            {
+              "name": "extra-resource.apps.Deployment..example"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "True",
+            "reason": "Matched"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:   "CustomReady",
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Matched",
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": [
+      {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+          "name": "example"
+        },
+        "status": {
+          "conditions": [
+            {
+              "message": "Deployment has minimum availability.",
+              "reason": "MinimumReplicasAvailable",
+              "status": "True",
+              "type": "Available"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+`),
+				},
+			},
+		},
 		// TODO: fail to load extra resources.
 	}
 
