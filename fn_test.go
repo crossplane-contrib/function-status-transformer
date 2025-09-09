@@ -3200,10 +3200,469 @@ func TestRunFunction(t *testing.T) {
 				},
 			},
 		},
-		// TODO: fail to load extra resources.
+		"ExtraResourcesMissingConditions": {
+			reason: "We are relying on Crossplane 'composed' package to convert extra resources into ConditionedObjects. We must test to ensure that an error or panic is not encountered if we attempt to read conditions from an object that has no status or no conditions.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": [
+      {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+          "name": "example"
+        }
+      },
+      {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+          "name": "example"
+        },
+        "status": {}
+      }
+    ]
+  }
+}
+`),
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeExtraResources": true,
+          "resources": [
+            {
+              "name": "extra-resource.apps.Deployment..example"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "True",
+            "reason": "Matched"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": [
+      {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+          "name": "example"
+        }
+      },
+      {
+        "apiVersion": "apps/v1",
+        "kind": "Deployment",
+        "metadata": {
+          "name": "example"
+        },
+        "status": {}
+      }
+    ]
+  }
+}
+`),
+				},
+			},
+		},
+		"TryToMatchExtraResourcesWhenNoObjectsExist": {
+			reason: "If no extra resources exist (but the key is present), we should not error when attempting to read them.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {}
+}
+`),
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeExtraResources": true,
+          "resources": [
+            {
+              "name": "extra-resource.apps.Deployment..example"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "True",
+            "reason": "Matched"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {}
+}
+`),
+				},
+			},
+		},
+		"TryToMatchExtraResourcesWhenNoneExist": {
+			reason: "If no extra resources exist (not even the key), we should not error when attempting to read them.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta:    &fnv1.RequestMeta{Tag: "hello"},
+					Context: resource.MustStructJSON(`{}`),
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeExtraResources": true,
+          "resources": [
+            {
+              "name": "extra-resource.apps.Deployment..example"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "True",
+            "reason": "Matched"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:   "StatusTransformationSuccess",
+							Status: fnv1.Status_STATUS_CONDITION_TRUE,
+							Reason: "Available",
+							Target: fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Context: resource.MustStructJSON(`{}`),
+				},
+			},
+		},
+		"ExtraResourcesInvalidType": {
+			reason: "We should fail if the extra resource value is unexpected.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": 1
+}
+`),
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeExtraResources": true,
+          "resources": [
+            {
+              "name": "extra-resource.apps.Deployment..example"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "True",
+            "reason": "Matched"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:    "StatusTransformationSuccess",
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
+							Reason:  "InputFailure",
+							Message: ptr.To("cannot load extra-resources: unexpected extra-resources type: float64"),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": 1
+}
+`),
+				},
+			},
+		},
+		"ExtraResourcesInvalidValueForObjectType": {
+			reason: "We should fail if the value for one of the extra resource kinds is invalid.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": 1
+  }
+}
+`),
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeExtraResources": true,
+          "resources": [
+            {
+              "name": "extra-resource.apps.Deployment..example"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "True",
+            "reason": "Matched"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:    "StatusTransformationSuccess",
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
+							Reason:  "InputFailure",
+							Message: ptr.To("cannot load extra-resources: unexpected extra-resources value type for Deployment: float64"),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": 1
+  }
+}
+`),
+				},
+			},
+		},
+		"ExtraResourcesInvalidValueForObject": {
+			reason: "We should fail if the value for one of the extra resource objects is invalid.",
+			args: args{
+				ctx: context.Background(),
+				req: &fnv1.RunFunctionRequest{
+					Meta: &fnv1.RequestMeta{Tag: "hello"},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": [
+      1
+    ]
+  }
+}
+`),
+					Input: resource.MustStructJSON(`
+{
+  "apiVersion": "function-status-transformer.fn.crossplane.io/v1beta1",
+  "kind": "StatusTransformation",
+  "statusConditionHooks": [
+    {
+      "matchers": [
+        {
+          "includeExtraResources": true,
+          "resources": [
+            {
+              "name": "extra-resource.apps.Deployment..example"
+            }
+          ],
+          "conditions": [
+            {
+              "type": "Available",
+              "status": "True"
+            }
+          ]
+        }
+      ],
+      "setConditions": [
+        {
+          "target": "Composite",
+          "condition": {
+            "type": "CustomReady",
+            "status": "True",
+            "reason": "Matched"
+          }
+        }
+      ]
+    }
+  ]
+}
+`),
+				},
+			},
+			want: want{
+				rsp: &fnv1.RunFunctionResponse{
+					Meta:    &fnv1.ResponseMeta{Tag: "hello", Ttl: durationpb.New(response.DefaultTTL)},
+					Results: []*fnv1.Result{},
+					Conditions: []*fnv1.Condition{
+						{
+							Type:    "StatusTransformationSuccess",
+							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
+							Reason:  "InputFailure",
+							Message: ptr.To("cannot load extra-resources: unexpected extra-resources value type for Deployment [0]: float64"),
+							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
+						},
+					},
+					Context: resource.MustStructJSON(`
+{
+  "apiextensions.crossplane.io/extra-resources": {
+    "Deployment": [
+      1
+    ]
+  }
+}
+`),
+				},
+			},
+		},
 	}
 
 	for name, tc := range cases {
+		// if name != "ExtraResourcesMissingConditions" {
+		// 	continue
+		// }
 		t.Run(name, func(t *testing.T) {
 			f := &Function{log: logging.NewNopLogger()}
 			rsp, err := f.RunFunction(tc.args.ctx, tc.args.req)
