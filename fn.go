@@ -475,7 +475,7 @@ type conditionedObject interface {
 // getExtraResources loads extra resources provided by the extra-resources
 // function.
 func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error) {
-	exRe, ok := req.Context.AsMap()["apiextensions.crossplane.io/extra-resources"]
+	exRe, ok := req.GetContext().AsMap()["apiextensions.crossplane.io/extra-resources"]
 	if !ok {
 		return []conditionedObject{}, nil
 	}
