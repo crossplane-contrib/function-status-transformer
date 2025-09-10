@@ -25,21 +25,6 @@ import (
 	"github.com/crossplane/function-status-transformer/input/v1beta1"
 )
 
-// TODO: test to see if a Deployment's status condition can be used here.
-// It doesn't exactly match crossplane's conditions
-
-// TODO:
-// - create Group instance to test function
-// - test basic functionality
-// - build solution
-// - build tests
-
-// TODO: (dalton) since all matching seems to be on the name of the resource,
-// we will need to load in the extra resources and create names for them, such
-// as extra-resource.GVK.namespace/name. Though we probably want to leave out
-// version to prevent breaking any matching after an object is upgraded.
-// e.g., name: extra-resource.apps.Deployment.default/hello
-
 type contextKey string
 
 const (
@@ -490,8 +475,6 @@ type conditionedObject interface {
 // getExtraResources loads extra resources provided by the extra-resources
 // function.
 func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error) {
-	// Load extra resources and only consider those who have conditions that can
-	// be evaluated similarly to existing XP conditioned objects.
 	exRe, ok := req.Context.AsMap()["apiextensions.crossplane.io/extra-resources"]
 	if !ok {
 		return []conditionedObject{}, nil
