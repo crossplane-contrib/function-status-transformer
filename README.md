@@ -11,6 +11,7 @@
   - [Matchers are ANDed](#matchers-are-anded)
   - [Overriding Conditions](#overriding-conditions)
   - [Matching the Composite Resource](#matching-the-composite-resource)
+  - [Matching Extra Resources](#matching-extra-resources)
   - [Matching Missing Conditions](#matching-missing-conditions)
   - [Setting Default Conditions](#setting-default-conditions)
   - [Creating Events](#creating-events)
@@ -224,6 +225,31 @@ kind: StatusTransformation
 statusConditionHooks:
 - matchers:
   - includeCompositeAsResource: true
+    conditions:
+    - type: Synced
+      status: "False"
+      reason: "SomeError"
+```
+
+### Matching Extra Resources
+
+You can match resources that are included by the [extra-resources
+function](https://github.com/crossplane-contrib/function-extra-resources). To do
+this you will need to set `includeExtraResources` to true and then match the
+desired extra resources. Extra resources follow the pattern
+`extra-resource.<group>.<kind>.<namespace>.name` (e.g.,
+`extra-resource.apps.Deployment.default.nginx`). Note that cluster-scoped
+resources will have an empty namespace segment (e.g.,
+`extra-resource.rbac.authorization.k8s.io.ClusterRole..admin`).
+
+```yaml
+apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
+kind: StatusTransformation
+statusConditionHooks:
+- matchers:
+  - includeExtraResources: true
+    resources:
+    - name: "extra-resource.apps.Deployment.default.nginx"
     conditions:
     - type: Synced
       status: "False"
