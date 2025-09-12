@@ -98,11 +98,12 @@ type Matcher struct {
 	// list of matched resources.
 	IncludeCompositeAsResource *bool `json:"includeCompositeAsResource"`
 
-	// IncludeExtraResources will check for resources from the extra-resources
-	// function and include them to be matched against. These resources will have
-	// names that follow the pattern
-	// "extra-resource.<group>.<kind>.<namespace>.name"
-	// (e.g., extra-resource.apps.Deployment.default.nginx)
+	// IncludeExtraResources will include resources from the extra-resources
+	// function to be matched against. These resources will have names that follow
+	// the pattern "extra-resource.<into>.<group>.<kind>.<namespace>.<name>".
+	// 'into' refers to the extra-resource function's Input field at
+	// <Input>.spec.extraResources[*].into. An example name:
+	// "extra-resource.Deployment.apps.Deployment.default.nginx".
 	IncludeExtraResources *bool `json:"includeExtraResources"`
 }
 

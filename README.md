@@ -237,10 +237,15 @@ You can match resources that are included by the [extra-resources
 function](https://github.com/crossplane-contrib/function-extra-resources). To do
 this you will need to set `includeExtraResources` to true and then match the
 desired extra resources. Extra resources follow the pattern
-`extra-resource.<group>.<kind>.<namespace>.name` (e.g.,
-`extra-resource.apps.Deployment.default.nginx`). Note that cluster-scoped
-resources will have an empty namespace segment (e.g.,
-`extra-resource.rbac.authorization.k8s.io.ClusterRole..admin`).
+`extra-resource.<into>.<group>.<kind>.<namespace>.<name>` (e.g.,
+`extra-resource.Deployment.apps.Deployment.default.nginx`).
+
+Notes:
+
+- Cluster-scoped resources will have an empty namespace segment (e.g.,
+`extra-resource.ClusterRole.rbac.authorization.k8s.io.ClusterRole..admin`).
+- `into` refers to the extra-resource function's Input field at
+`<Input>.spec.extraResources[*].into`.
 
 ```yaml
 apiVersion: function-status-transformer.fn.crossplane.io/v1beta1
@@ -249,7 +254,7 @@ statusConditionHooks:
 - matchers:
   - includeExtraResources: true
     resources:
-    - name: "extra-resource.apps.Deployment.default.nginx"
+    - name: "extra-resource.Deployment.apps.Deployment.default.nginx"
     conditions:
     - type: Synced
       status: "False"

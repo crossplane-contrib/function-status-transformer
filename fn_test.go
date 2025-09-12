@@ -2848,7 +2848,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -2882,7 +2882,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment.default.example"
+              "name": "extra-resource.IntoKey.apps.Deployment.default.example"
             }
           ],
           "conditions": [
@@ -2930,7 +2930,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -2969,7 +2969,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -3003,7 +3003,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment.default.example"
+              "name": "extra-resource.IntoKey.apps.Deployment.default.example"
             }
           ],
           "conditions": [
@@ -3016,7 +3016,7 @@ func TestRunFunction(t *testing.T) {
         {
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment.default.example"
+              "name": "extra-resource.IntoKey.apps.Deployment.default.example"
             }
           ],
           "conditions": [
@@ -3059,7 +3059,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -3094,7 +3094,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -3127,7 +3127,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment..example"
+              "name": "extra-resource.IntoKey.apps.Deployment..example"
             }
           ],
           "conditions": [
@@ -3175,7 +3175,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -3209,7 +3209,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -3240,7 +3240,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment..example"
+              "name": "extra-resource.IntoKey.apps.Deployment..example"
             }
           ],
           "conditions": [
@@ -3282,7 +3282,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       {
         "apiVersion": "apps/v1",
         "kind": "Deployment",
@@ -3327,7 +3327,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment..example"
+              "name": "extra-resource.IntoKey.apps.Deployment..example"
             }
           ],
           "conditions": [
@@ -3392,7 +3392,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment..example"
+              "name": "extra-resource.IntoKey.apps.Deployment..example"
             }
           ],
           "conditions": [
@@ -3457,7 +3457,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment..example"
+              "name": "extra-resource.IntoKey.apps.Deployment..example"
             }
           ],
           "conditions": [
@@ -3514,7 +3514,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": 1
+    "IntoKey": 1
   }
 }
 `),
@@ -3529,7 +3529,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment..example"
+              "name": "extra-resource.IntoKey.apps.Deployment..example"
             }
           ],
           "conditions": [
@@ -3565,14 +3565,14 @@ func TestRunFunction(t *testing.T) {
 							Type:    "StatusTransformationSuccess",
 							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "InputFailure",
-							Message: ptr.To("cannot load extra-resources: unexpected extra-resources value type for Deployment: float64"),
+							Message: ptr.To("cannot load extra-resources: unexpected extra-resources value type for IntoKey: float64"),
 							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": 1
+    "IntoKey": 1
   }
 }
 `),
@@ -3588,7 +3588,7 @@ func TestRunFunction(t *testing.T) {
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       1
     ]
   }
@@ -3605,7 +3605,7 @@ func TestRunFunction(t *testing.T) {
           "includeExtraResources": true,
           "resources": [
             {
-              "name": "extra-resource.apps.Deployment..example"
+              "name": "extra-resource.IntoKey.apps.Deployment..example"
             }
           ],
           "conditions": [
@@ -3641,14 +3641,14 @@ func TestRunFunction(t *testing.T) {
 							Type:    "StatusTransformationSuccess",
 							Status:  fnv1.Status_STATUS_CONDITION_FALSE,
 							Reason:  "InputFailure",
-							Message: ptr.To("cannot load extra-resources: unexpected extra-resources value type for Deployment [0]: float64"),
+							Message: ptr.To("cannot load extra-resources: unexpected extra-resources value type for IntoKey [0]: float64"),
 							Target:  fnv1.Target_TARGET_COMPOSITE.Enum(),
 						},
 					},
 					Context: resource.MustStructJSON(`
 {
   "apiextensions.crossplane.io/extra-resources": {
-    "Deployment": [
+    "IntoKey": [
       1
     ]
   }

@@ -94,7 +94,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 
 	errored := false
 	conditionsSet := map[string]bool{}
-	var extraResources []conditionedObject
+	var extraResources []extraResource
 	for shi, sh := range in.StatusConditionHooks {
 		log := log.WithValues("statusConditionHookIndex", shi)
 		// The regular expression groups found in the matches.
@@ -187,7 +187,7 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 }
 
 //nolint:gocyclo // Feels naturally complex.
-func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[string]*fnv1.Resource, xr *sdkresource.Composite, extraResources []conditionedObject) (bool, map[string]string, error) {
+func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[string]*fnv1.Resource, xr *sdkresource.Composite, extraResources []extraResource) (bool, map[string]string, error) {
 	log := ctx.Value(logKey).(logging.Logger)
 
 	includeExtraResources := ptr.Deref(mc.IncludeExtraResources, false)
@@ -213,9 +213,11 @@ func matchResources(ctx context.Context, mc v1beta1.Matcher, observedMap map[str
 			continue
 		}
 		for _, o := range extraResources {
-			// Constructs a key (e.g., extra-resource.apps.Deployment.namespace/name).
+			// Constructs a key (e.g.,
+			// extra-resource.Deployment.apps.Deployment.namespace/name).
 			keyParts := []string{
 				"extra-resource",
+				o.into,
 				o.GetObjectKind().GroupVersionKind().Group,
 				o.GetObjectKind().GroupVersionKind().Kind,
 				o.GetNamespace(),
@@ -472,12 +474,17 @@ type conditionedObject interface {
 	resource.Conditioned
 }
 
+type extraResource struct {
+	conditionedObject
+	into string
+}
+
 // getExtraResources loads extra resources provided by the extra-resources
 // function.
-func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error) {
+func getExtraResources(req *fnv1.RunFunctionRequest) ([]extraResource, error) {
 	exRe, ok := req.GetContext().AsMap()["apiextensions.crossplane.io/extra-resources"]
 	if !ok {
-		return []conditionedObject{}, nil
+		return []extraResource{}, nil
 	}
 
 	exReMap, ok := exRe.(map[string]any)
@@ -485,7 +492,7 @@ func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error
 		return nil, fmt.Errorf("unexpected extra-resources type: %T", exRe)
 	}
 
-	cs := []conditionedObject{}
+	extraResources := []extraResource{}
 	for k, v := range exReMap {
 		vs, ok := v.([]any)
 		if !ok {
@@ -496,13 +503,16 @@ func getExtraResources(req *fnv1.RunFunctionRequest) ([]conditionedObject, error
 			if !ok {
 				return nil, fmt.Errorf("unexpected extra-resources value type for %s [%d]: %T", k, i, v2)
 			}
-			cs = append(cs, &composed.Unstructured{
-				Unstructured: unstructured.Unstructured{
-					Object: data,
+			extraResources = append(extraResources, extraResource{
+				into: k,
+				conditionedObject: &composed.Unstructured{
+					Unstructured: unstructured.Unstructured{
+						Object: data,
+					},
 				},
 			})
 		}
 	}
 
-	return cs, nil
+	return extraResources, nil
 }
