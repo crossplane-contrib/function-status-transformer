@@ -40,7 +40,7 @@ RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /function .
 
 # Produce the Function image. We use a very lightweight 'distroless' image that
 # does not include any of the build tools used in previous stages.
-FROM gcr.io/distroless/base-debian11 AS image
+FROM gcr.io/distroless/base-debian12 AS image
 WORKDIR /
 COPY --from=build /function /function
 EXPOSE 9443
