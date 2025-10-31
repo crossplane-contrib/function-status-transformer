@@ -85,7 +85,6 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 		"xr-kind", xr.Resource.GetKind(),
 		"xr-name", xr.Resource.GetName(),
 	)
-	log.Info("running function")
 
 	observed := map[string]*fnv1.Resource{}
 	if req.GetObserved() != nil && req.GetObserved().GetResources() != nil {
