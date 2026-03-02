@@ -1,0 +1,18 @@
+---
+apiVersion: example.crossplane.io/v1
+kind: XR
+metadata:
+  name: example-xr
+---
+apiVersion: custom.example.com/v1alpha1
+kind: MyResource
+metadata:
+  name: my-resource-123
+  annotations:
+    crossplane.io/composition-resource-name: my-resource
+status:
+  conditions:
+  - type: Synced
+    status: "False"
+    reason: SomeError
+    message: "Something went wrong"
