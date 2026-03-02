@@ -1,6 +1,6 @@
 module github.com/crossplane/function-status-transformer
 
-go 1.24.9
+go 1.24.13
 
 require (
 	github.com/alecthomas/kong v1.12.1
