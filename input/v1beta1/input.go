@@ -30,9 +30,9 @@ const (
 	TargetCompositeAndClaim Target = "CompositeAndClaim"
 )
 
-// +kubebuilder:validation:Enum=MatchAny;MatchAll
-
 // MatchType determines matching behavior.
+//
+// +kubebuilder:validation:Enum=AnyResourceMatchesAnyCondition;AnyResourceMatchesAllConditions;AllResourcesMatchAnyCondition;AllResourcesMatchAllConditions
 type MatchType string
 
 const (
