@@ -151,8 +151,10 @@ spec:
                           AllResourcesMatchAnyCondition - All resources must match any condition.
                           AllResourcesMatchAllConditions - All resources must match all condition.
                         enum:
-                        - MatchAny
-                        - MatchAll
+                        - AnyResourceMatchesAnyCondition
+                        - AnyResourceMatchesAllConditions
+                        - AllResourcesMatchAnyCondition
+                        - AllResourcesMatchAllConditions
                         type: string
                     required:
                     - conditions
