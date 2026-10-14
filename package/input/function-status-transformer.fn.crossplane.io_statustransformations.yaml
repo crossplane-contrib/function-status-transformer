@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.14.0
+    controller-gen.kubebuilder.io/version: v0.19.0
   name: statustransformations.function-status-transformer.fn.crossplane.io
 spec:
   group: function-status-transformer.fn.crossplane.io
@@ -67,8 +67,6 @@ spec:
                             type: string
                         required:
                         - message
-                        - reason
-                        - type
                         type: object
                       target:
                         description: |-
@@ -77,7 +75,6 @@ spec:
                         type: string
                     required:
                     - event
-                    - target
                     type: object
                   type: array
                 matchers:
@@ -112,20 +109,27 @@ spec:
                               description: Type of the condition. Required.
                               type: string
                           required:
-                          - message
-                          - reason
-                          - status
                           - type
                           type: object
                         type: array
                       includeCompositeAsResource:
                         description: |-
                           IncludeCompositeAsResource allows you to add the Composite Resource to the
-                          list of resources.
+                          list of matched resources.
+                        type: boolean
+                      includeExtraResources:
+                        description: |-
+                          IncludeExtraResources will include resources from the extra-resources
+                          function to be matched against. These resources will have names that follow
+                          the pattern "extra-resource.<into>.<group>.<kind>.<namespace>.<name>".
+                          'into' refers to the extra-resource function's Input field at
+                          <Input>.spec.extraResources[*].into. An example name:
+                          "extra-resource.Deployment.apps.Deployment.default.nginx".
                         type: boolean
                       name:
-                        description: Name of the matcher. Optional. Will be used in
-                          logging.
+                        description: |-
+                          Name of the matcher. Optional. Not used by the function; it can be used to
+                          document the matcher.
                         type: string
                       resources:
                         description: Resources that should have their conditions matched
@@ -158,10 +162,6 @@ spec:
                         type: string
                     required:
                     - conditions
-                    - includeCompositeAsResource
-                    - name
-                    - resources
-                    - type
                     type: object
                   type: array
                 setConditions:
@@ -189,7 +189,6 @@ spec:
                             description: Type of the condition. Required.
                             type: string
                         required:
-                        - message
                         - reason
                         - status
                         - type
@@ -206,14 +205,10 @@ spec:
                         type: string
                     required:
                     - condition
-                    - force
-                    - target
                     type: object
                   type: array
               required:
-              - createEvents
               - matchers
-              - setConditions
               type: object
             type: array
         required:

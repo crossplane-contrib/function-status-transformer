@@ -68,6 +68,16 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
 
+      - name: Check generated files are up to date
+        run: |
+          go generate ./...
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Generated files are out of date. Run 'go generate ./...' and commit the result."
+            git status --porcelain
+            git diff
+            exit 1
+          fi
+
       - name: Run Unit Tests
         run: go test -v -cover ./...
 

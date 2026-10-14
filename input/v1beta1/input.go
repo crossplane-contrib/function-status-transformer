@@ -53,9 +53,11 @@ const (
 type SetCondition struct {
 	// The target(s) to receive the condition. Can be Composite or
 	// CompositeAndClaim.
+	// +optional
 	Target *Target `json:"target"`
 	// If true, the condition will override a condition of the same Type. Defaults
 	// to false.
+	// +optional
 	Force *bool `json:"force"`
 	// Condition to set.
 	Condition Condition `json:"condition"`
@@ -73,12 +75,15 @@ type Condition struct {
 	// Message of the condition. Optional. A template can be used. The available
 	// template variables come from capturing groups in MatchCondition message
 	// regular expressions.
+	// +optional
 	Message *string `json:"message"`
 }
 
 // Matcher will attempt to match a condition on the resource.
 type Matcher struct {
-	// Name of the matcher. Optional. Will be used in logging.
+	// Name of the matcher. Optional. Not used by the function; it can be used to
+	// document the matcher.
+	// +optional
 	Name *string `json:"name"`
 
 	// Type will determine the behavior of the match. Can be one of the following.
@@ -86,9 +91,11 @@ type Matcher struct {
 	// AnyResourceMatchesAllConditions - Any resource must match all conditions.
 	// AllResourcesMatchAnyCondition - All resources must match any condition.
 	// AllResourcesMatchAllConditions - All resources must match all condition.
+	// +optional
 	Type *MatchType `json:"type"`
 
 	// Resources that should have their conditions matched against.
+	// +optional
 	Resources []ResourceMatcher `json:"resources"`
 
 	// Conditions that must exist on the resource(s).
@@ -96,6 +103,7 @@ type Matcher struct {
 
 	// IncludeCompositeAsResource allows you to add the Composite Resource to the
 	// list of matched resources.
+	// +optional
 	IncludeCompositeAsResource *bool `json:"includeCompositeAsResource"`
 
 	// IncludeExtraResources will include resources from the extra-resources
@@ -104,6 +112,7 @@ type Matcher struct {
 	// 'into' refers to the extra-resource function's Input field at
 	// <Input>.spec.extraResources[*].into. An example name:
 	// "extra-resource.Deployment.apps.Deployment.default.nginx".
+	// +optional
 	IncludeExtraResources *bool `json:"includeExtraResources"`
 }
 
@@ -119,14 +128,17 @@ type ConditionMatcher struct {
 	// Type of the condition. Required.
 	Type string `json:"type"`
 	// Status of the condition. If omitted, will be treated as a wildcard.
+	// +optional
 	Status *metav1.ConditionStatus `json:"status"`
 	// Reason of the condition. If omitted, will be treated as a wildcard.
+	// +optional
 	Reason *string `json:"reason"`
 	// Message of the condition. Can be a regular expression. The regular
 	// expression can have capturing groups.
 	// For example: "Something went wrong: (?P<Error>.+)".
 	// The captured groups will be available to the message template when setting
 	// conditions.
+	// +optional
 	Message *string `json:"message"`
 }
 
@@ -137,9 +149,11 @@ type StatusConditionHook struct {
 	Matchers []Matcher `json:"matchers"`
 
 	// A list of conditions to set if all MatchConditions matched.
+	// +optional
 	SetConditions []SetCondition `json:"setConditions"`
 
 	// A list of events to create if all MatchConditions matched.
+	// +optional
 	CreateEvents []CreateEvent `json:"createEvents"`
 }
 
@@ -157,8 +171,10 @@ const (
 // Event allows you to specify the fields of an event to create.
 type Event struct {
 	// Type of the event. Optional. Should be either Normal or Warning.
+	// +optional
 	Type *EventType `json:"type"`
 	// Reason of the event. Optional.
+	// +optional
 	Reason *string `json:"reason"`
 	// Message of the event. Required. A template can be used. The available
 	// template variables come from capturing groups in MatchCondition message
@@ -170,6 +186,7 @@ type Event struct {
 type CreateEvent struct {
 	// The target(s) to create an event for. Can be Composite or
 	// CompositeAndClaim.
+	// +optional
 	Target *Target `json:"target"`
 
 	// Event to create.
