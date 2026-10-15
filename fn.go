@@ -13,10 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
 
-	xpv1 "github.com/crossplane/crossplane-runtime/apis/common/v1"
-	"github.com/crossplane/crossplane-runtime/pkg/errors"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	fnv1 "github.com/crossplane/function-sdk-go/proto/v1"
 	"github.com/crossplane/function-sdk-go/request"
 	sdkresource "github.com/crossplane/function-sdk-go/resource"
@@ -358,7 +358,7 @@ func match(ctx context.Context, cm v1beta1.ConditionMatcher, co conditionedObjec
 	log := ctx.Value(logKey).(logging.Logger)
 	cmGroups := map[string]string{}
 
-	c := co.GetCondition(xpv1.ConditionType(cm.Type))
+	c := co.GetCondition(xpv2.ConditionType(cm.Type))
 	if cm.Reason != nil && *cm.Reason != string(c.Reason) {
 		log.Debug(fmt.Sprintf("condition reason \"%s\" did not match \"%s\"", c.Reason, *cm.Reason))
 		return false, nil, nil
