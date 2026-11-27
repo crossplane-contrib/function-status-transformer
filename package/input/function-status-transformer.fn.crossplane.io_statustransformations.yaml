@@ -211,6 +211,11 @@ spec:
               - matchers
               type: object
             type: array
+          ttl:
+            description: |-
+              TTL is how long Crossplane can cache this Function's response, as a Go
+              duration string. Defaults to 1m. Zero disables expiry of cached responses.
+            type: string
         required:
         - statusConditionHooks
         type: object

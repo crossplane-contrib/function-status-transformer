@@ -8,7 +8,9 @@ import (
 	"regexp"
 	"strings"
 	"text/template"
+	"time"
 
+	"google.golang.org/protobuf/types/known/durationpb"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/ptr"
@@ -70,6 +72,19 @@ func (f *Function) RunFunction(ctx context.Context, req *fnv1.RunFunctionRequest
 		response.ConditionFalse(rsp, typeFunctionSuccess, reasonInputFailure).
 			WithMessage(errors.Wrap(err, msg).Error())
 		return rsp, nil
+	}
+
+	if in.TTL != "" {
+		ttl, err := time.ParseDuration(in.TTL)
+		if err != nil {
+			response.Fatal(rsp, errors.Wrap(err, "cannot parse ttl"))
+			return rsp, nil
+		}
+		if ttl < 0 {
+			response.Fatal(rsp, errors.New("ttl duration cannot be negative"))
+			return rsp, nil
+		}
+		rsp.Meta.Ttl = durationpb.New(ttl)
 	}
 
 	xr, err := request.GetObservedCompositeResource(req)
