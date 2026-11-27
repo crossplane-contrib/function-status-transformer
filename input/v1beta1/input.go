@@ -16,6 +16,11 @@ type StatusTransformation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
+	// TTL is how long Crossplane can cache this Function's response, as a Go
+	// duration string. Defaults to 1m. Zero disables expiry of cached responses.
+	// +optional
+	TTL string `json:"ttl,omitempty"`
+
 	StatusConditionHooks []StatusConditionHook `json:"statusConditionHooks"`
 }
 
